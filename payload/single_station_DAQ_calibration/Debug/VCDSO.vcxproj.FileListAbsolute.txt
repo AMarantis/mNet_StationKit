@@ -1,5 +1,0 @@
-C:\Users\Antonios Leisos\Downloads\DSO_Site_Save_pulses_1_HANTEK\Debug\VCDSO.exe
-C:\Users\mnet\OneDriveHOU\Επιφάνεια εργασίας\repos\DSO_Site_Save_pulses_1_HANTEKFIX\Debug\VCDSO.exe
-C:\Users\mnet\OneDriveHOU\Desktop\repos\DSO_Site_Save_pulses_1_HANTEKFIX\Debug\VCDSO.exe
-C:\Users\mnet_station1\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\Debug\VCDSO.exe
-C:\Users\mnet\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\Debug\VCDSO.exe

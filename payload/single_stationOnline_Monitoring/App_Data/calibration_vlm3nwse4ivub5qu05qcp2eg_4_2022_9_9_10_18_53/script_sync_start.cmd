@@ -1,1 +1,0 @@
-C:\root_v6.26.04\bin\root.exe -b -q timing.C
