@@ -3,6 +3,8 @@
 $cfg = Get-MNetConfig
 $kitRoot = Get-MNetKitRoot
 
+$DEFAULT_VCREDIST_URL = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+
 function Get-Downloads {
   if ($null -eq $cfg.downloads) { return $null }
   return $cfg.downloads
@@ -26,6 +28,10 @@ function Download-File {
   }
   if (-not $Url) {
     throw "Missing download URL."
+  }
+  if (Test-Path $OutFile) {
+    Write-Host "Already downloaded: $OutFile"
+    return
   }
   Write-Host "Downloading: $Url"
   Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
@@ -56,6 +62,82 @@ function Extract-ZipTo {
   Expand-Archive -Path $ZipPath -DestinationPath $DestDir -Force
 }
 
+function Get-DownloadCachePath {
+  param([Parameter(Mandatory=$true)][string]$Url)
+  $dir = Join-Path $kitRoot "deps/installers"
+  Ensure-Directory -Path $dir
+  $leaf = Split-Path -Leaf $Url
+  if (-not $leaf -or $leaf.Trim() -eq "") {
+    $leaf = "download_" + [guid]::NewGuid().ToString()
+  }
+  return (Join-Path $dir $leaf)
+}
+
+function Test-VcRedistInstalled {
+  $keys = @(
+    "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
+  )
+  foreach ($k in $keys) {
+    try {
+      $p = Get-ItemProperty -Path $k -ErrorAction Stop
+      if ($p.Installed -eq 1) { return $true }
+    } catch {
+      # ignore
+    }
+  }
+  return $false
+}
+
+function Ensure-RootFromZip {
+  param([Parameter(Mandatory=$true)][string]$ZipPath)
+
+  $tmp = Join-Path $env:TEMP ("root_extract_" + [guid]::NewGuid().ToString())
+  Ensure-Directory -Path $tmp
+  Expand-Archive -Path $ZipPath -DestinationPath $tmp -Force
+
+  $cand = Get-ChildItem -Path $tmp -Recurse -File -Filter "root.exe" -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName.ToLower().EndsWith("\bin\root.exe") } |
+    Select-Object -First 1
+
+  if (-not $cand) {
+    throw "Could not locate bin\\root.exe inside the downloaded ROOT zip."
+  }
+
+  $rootBin = Split-Path -Path $cand.FullName -Parent
+  $rootDir = Split-Path -Path $rootBin -Parent
+
+  $dest = Join-Path $kitRoot "deps/root"
+  Ensure-Directory -Path $dest
+
+  # Clean destination except README.txt
+  Get-ChildItem -Path $dest -Force -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -ne "README.txt" } |
+    ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+
+  Copy-Item -Path (Join-Path $rootDir "*") -Destination $dest -Recurse -Force
+}
+
+function Ensure-IisExpressPortableFromZip {
+  param([Parameter(Mandatory=$true)][string]$ZipPath)
+
+  $dest = Join-Path $kitRoot "deps/iisexpress"
+  Ensure-Directory -Path $dest
+
+  Expand-Archive -Path $ZipPath -DestinationPath $dest -Force
+
+  $expected = Join-Path $dest "iisexpress.exe"
+  if (Test-Path $expected) { return }
+
+  $found = Get-ChildItem -Path $dest -Recurse -File -Filter "iisexpress.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($found) {
+    Copy-Item -Path $found.FullName -Destination $expected -Force
+    return
+  }
+
+  throw "Downloaded IIS Express zip did not contain iisexpress.exe."
+}
+
 Write-Host "Kit: $kitRoot"
 
 # IIS Express (optional if already installed)
@@ -65,29 +147,30 @@ try {
 } catch {
   $msi = Find-Installer -Pattern "*iisexpress*.msi"
   $exe = Find-Installer -Pattern "*iisexpress*.exe"
+  $zip = Find-Installer -Pattern "*iisexpress*.zip"
   if ($msi) {
     Write-Host "Installing IIS Express MSI: $($msi.FullName)"
     Install-Msi -Path $msi.FullName
   } elseif ($exe) {
     Write-Host "Installing IIS Express EXE: $($exe.FullName)"
     Install-ExeQuiet -Path $exe.FullName
+  } elseif ($zip) {
+    Write-Host "Extracting IIS Express ZIP: $($zip.FullName)"
+    Ensure-IisExpressPortableFromZip -ZipPath $zip.FullName
   } else {
     $dl = Get-Downloads
     if ($dl -and $dl.iisExpressInstallerUrl) {
-      $tmp = Join-Path $env:TEMP ("iisexpress_" + [guid]::NewGuid().ToString())
-      Ensure-Directory -Path $tmp
-      $out = Join-Path $tmp (Split-Path -Leaf $dl.iisExpressInstallerUrl)
+      $out = Get-DownloadCachePath -Url $dl.iisExpressInstallerUrl
       Download-File -Url $dl.iisExpressInstallerUrl -OutFile $out
-      if ($out.ToLower().EndsWith(".msi")) {
-        Install-Msi -Path $out
-      } elseif ($out.ToLower().EndsWith(".zip")) {
-        $dest = Join-Path $kitRoot "deps/iisexpress"
-        Extract-ZipTo -ZipPath $out -DestDir $dest
-      } else {
-        Install-ExeQuiet -Path $out
-      }
+      if ($out.ToLower().EndsWith(".msi")) { Install-Msi -Path $out }
+      elseif ($out.ToLower().EndsWith(".zip")) { Ensure-IisExpressPortableFromZip -ZipPath $out }
+      else { Install-ExeQuiet -Path $out }
     } else {
-      Write-Host "No IIS Express installer found under deps/installers, and no downloads.iisExpressInstallerUrl configured. Skipping."
+      Write-Host "IIS Express not found."
+      Write-Host "Provide one of:"
+      Write-Host "  - Install IIS Express (so C:\\Program Files\\IIS Express\\iisexpress.exe exists)"
+      Write-Host "  - Put an installer/zip under deps\\installers (name containing 'iisexpress')"
+      Write-Host "  - Set config/station.json -> downloads.iisExpressInstallerUrl"
     }
   }
 
@@ -97,20 +180,23 @@ try {
 }
 
 # VC++ redist (optional)
-$vc = Find-Installer -Pattern "vc_redist*.exe"
-if ($vc) {
-  Write-Host "Installing VC++ redist: $($vc.FullName)"
-  Install-ExeQuiet -Path $vc.FullName -Args @("/install", "/quiet", "/norestart")
+if (Test-VcRedistInstalled) {
+  Write-Host "VC++ redist already installed."
 } else {
-  $dl = Get-Downloads
-  if ($dl -and $dl.vcRedistInstallerUrl) {
-    $tmp = Join-Path $env:TEMP ("vcredist_" + [guid]::NewGuid().ToString())
-    Ensure-Directory -Path $tmp
-    $out = Join-Path $tmp (Split-Path -Leaf $dl.vcRedistInstallerUrl)
-    Download-File -Url $dl.vcRedistInstallerUrl -OutFile $out
-    Install-ExeQuiet -Path $out -Args @("/install", "/quiet", "/norestart")
+  $vc = Find-Installer -Pattern "vc_redist*.exe"
+  if ($vc) {
+    Write-Host "Installing VC++ redist: $($vc.FullName)"
+    Install-ExeQuiet -Path $vc.FullName -Args @("/install", "/quiet", "/norestart")
   } else {
-    Write-Host "No vc_redist installer found under deps/installers, and no downloads.vcRedistInstallerUrl configured. Skipping."
+    $dl = Get-Downloads
+    $url = $null
+    if ($dl -and $dl.vcRedistInstallerUrl) { $url = $dl.vcRedistInstallerUrl }
+    if (-not $url) { $url = $DEFAULT_VCREDIST_URL }
+
+    $out = Get-DownloadCachePath -Url $url
+    Download-File -Url $url -OutFile $out
+    Write-Host "Installing VC++ redist: $out"
+    Install-ExeQuiet -Path $out -Args @("/install", "/quiet", "/norestart")
   }
 }
 
@@ -121,19 +207,19 @@ try {
 } catch {
   $dl = Get-Downloads
   if ($dl -and $dl.rootZipUrl) {
-    $tmp = Join-Path $env:TEMP ("root_" + [guid]::NewGuid().ToString())
-    Ensure-Directory -Path $tmp
-    $out = Join-Path $tmp (Split-Path -Leaf $dl.rootZipUrl)
+    $out = Get-DownloadCachePath -Url $dl.rootZipUrl
     Download-File -Url $dl.rootZipUrl -OutFile $out
     if (-not $out.ToLower().EndsWith(".zip")) {
       throw "downloads.rootZipUrl must point to a .zip for portable ROOT."
     }
-    $dest = Join-Path $kitRoot "deps/root"
-    Extract-ZipTo -ZipPath $out -DestDir $dest
+    Ensure-RootFromZip -ZipPath $out
     $null = Get-RootExe -Config $cfg
     Write-Host "ROOT now available: $($cfg.rootRelativeExePath)"
   } else {
-    Write-Host "ROOT not found and no downloads.rootZipUrl configured. Skipping."
+    Write-Host "ROOT not found."
+    Write-Host "Provide one of:"
+    Write-Host "  - Put portable ROOT at deps\\root\\bin\\root.exe"
+    Write-Host "  - Set config/station.json -> downloads.rootZipUrl (a .zip) and rerun Install-Dependencies"
   }
 }
 
