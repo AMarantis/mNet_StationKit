@@ -118,6 +118,24 @@ function Ensure-RootFromZip {
   Copy-Item -Path (Join-Path $rootDir "*") -Destination $dest -Recurse -Force
 }
 
+function Install-RootFromExe {
+  param([Parameter(Mandatory=$true)][string]$ExePath)
+
+  Write-Host "Running ROOT installer: $ExePath"
+  Write-Host "If a GUI opens, accept defaults; we'll try to auto-detect root.exe afterwards."
+
+  # Best-effort silent first (depends on installer type).
+  try {
+    Install-ExeQuiet -Path $ExePath -Args @("/S")
+  } catch {
+    try {
+      Install-ExeQuiet -Path $ExePath -Args @("/quiet", "/norestart")
+    } catch {
+      Start-Process -FilePath $ExePath -Wait
+    }
+  }
+}
+
 function Ensure-IisExpressPortableFromZip {
   param([Parameter(Mandatory=$true)][string]$ZipPath)
 
@@ -209,17 +227,20 @@ try {
   if ($dl -and $dl.rootZipUrl) {
     $out = Get-DownloadCachePath -Url $dl.rootZipUrl
     Download-File -Url $dl.rootZipUrl -OutFile $out
-    if (-not $out.ToLower().EndsWith(".zip")) {
-      throw "downloads.rootZipUrl must point to a .zip for portable ROOT."
+    if ($out.ToLower().EndsWith(".zip")) {
+      Ensure-RootFromZip -ZipPath $out
+    } elseif ($out.ToLower().EndsWith(".exe")) {
+      Install-RootFromExe -ExePath $out
+    } else {
+      throw "downloads.rootZipUrl must point to a .zip (portable) or .exe (installer)."
     }
-    Ensure-RootFromZip -ZipPath $out
     $null = Get-RootExe -Config $cfg
     Write-Host "ROOT now available: $($cfg.rootRelativeExePath)"
   } else {
     Write-Host "ROOT not found."
     Write-Host "Provide one of:"
     Write-Host "  - Put portable ROOT at deps\\root\\bin\\root.exe"
-    Write-Host "  - Set config/station.json -> downloads.rootZipUrl (a .zip) and rerun Install-Dependencies"
+    Write-Host "  - Set config/station.json -> downloads.rootZipUrl (a .zip or .exe) and rerun Install-Dependencies"
   }
 }
 

@@ -135,10 +135,45 @@ function Get-RootExe {
   param([Parameter(Mandatory=$true)][object]$Config)
   $kitRoot = Get-MNetKitRoot
   $rootExe = Join-Path $kitRoot $Config.rootRelativeExePath
-  if (-not (Test-Path $rootExe)) {
-    throw "ROOT not found at '$rootExe'. Put a portable ROOT folder under 'deps\\root' so it contains bin\\root.exe."
+
+  if (Test-Path $rootExe) { return $rootExe }
+
+  # Fallback: allow a system-installed ROOT (when the user downloads the ROOT .exe installer).
+  try {
+    if ($env:ROOTSYS) {
+      $fromEnv = Join-Path $env:ROOTSYS "bin\\root.exe"
+      if (Test-Path $fromEnv) { return $fromEnv }
+    }
+  } catch {}
+
+  $candidates = @()
+
+  # Common ROOT install folders
+  foreach ($base in @("C:\\", "${env:ProgramFiles}\\", "${env:ProgramFiles(x86)}\\")) {
+    if (-not $base) { continue }
+    try {
+      $dirs = Get-ChildItem -Path $base -Directory -Filter "root*" -ErrorAction SilentlyContinue
+      foreach ($d in $dirs) {
+        $cand = Join-Path $d.FullName "bin\\root.exe"
+        if (Test-Path $cand) { $candidates += $cand }
+      }
+    } catch {}
   }
-  return $rootExe
+
+  # Try known default folder patterns (root_vX.YY.ZZ...)
+  try {
+    $dirs = Get-ChildItem -Path "C:\\" -Directory -Filter "root_v*" -ErrorAction SilentlyContinue
+    foreach ($d in $dirs) {
+      $cand = Join-Path $d.FullName "bin\\root.exe"
+      if (Test-Path $cand) { $candidates += $cand }
+    }
+  } catch {}
+
+  if ($candidates.Count -gt 0) {
+    return $candidates | Select-Object -First 1
+  }
+
+  throw "ROOT not found. Expected portable ROOT at '$rootExe' OR a system install with root.exe under e.g. C:\\root_v*\\bin\\root.exe. Recommended: put portable ROOT at deps\\root\\bin\\root.exe."
 }
 
 function Copy-DirRobocopy {
