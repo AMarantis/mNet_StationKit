@@ -37,4 +37,5 @@ deps/installers/*
 *.zip
 *.7z
 *.msi
-*.exe
+# NOTE: Do NOT ignore *.exe globally.
+# The kit ships required executables under payload/ (DAQ + ASP.NET Roslyn compiler).
