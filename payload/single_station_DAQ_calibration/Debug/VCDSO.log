@@ -1,0 +1,16 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  StdAfx.cpp
+  _WIN32_WINNT not defined. Defaulting to _WIN32_WINNT_MAXVER (see WinSDKVer.h)
+cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  VCDSOView.cpp
+C:\Users\mnet\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\VCDSOView.cpp(138,20): warning C4244: 'initializing': conversion from 'double' to 'ULONG', possible loss of data
+  VCDSODoc.cpp
+  VCDSO.cpp
+C:\Users\mnet\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\VCDSO.cpp(60,2): warning C4996: 'CWinApp::Enable3dControls': CWinApp::Enable3dControls is no longer needed. You should remove this call.
+  MainFrm.cpp
+  Hard.cpp
+C:\Users\mnet\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\Hard.cpp(185,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\mnet\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\Hard.cpp(181,15): warning C4101: 'st': unreferenced local variable
+  Generating Code...
+Hard.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
+  VCDSO.vcxproj -> C:\Users\mnet\OneDriveHOU\Desktop\repos\single_station_DAQ_calibration\Debug\VCDSO.exe

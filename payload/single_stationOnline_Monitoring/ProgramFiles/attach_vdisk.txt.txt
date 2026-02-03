@@ -1,0 +1,3 @@
+select vdisk file="C:\Users\mnet\Documents\Virtual_D.vhd"
+attach vdisk
+assign letter=D

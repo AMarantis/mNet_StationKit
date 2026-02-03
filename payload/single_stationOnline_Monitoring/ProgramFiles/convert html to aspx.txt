@@ -1,0 +1,6 @@
+1. Create a new web form in visual web developer.
+2. Copy the content from body of the html file , paste it in body of the aspx page.
+3. Similarly copy the script, meta tags from head section of html , paste it in head    section of aspx page.
+4.if any external style sheet,Images included with html file, add them appropriately in a folder of your asp.net application.
+5.Now try to run the page and check if everything appears well, if not appearing well check the stylesheet and make some small changes.
+6.Check at the top of the page asp.net , <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> it is necessary.

@@ -1,0 +1,16 @@
+{
+  "usbVolumeLabel": "mNetStation",
+  "kitFolderName": "mNetStationKit",
+  "monitoringPort": 8080,
+  "spoolPath": "C:\\mNetSpool",
+  "virtualDataDriveLetter": "D",
+  "rootRelativeExePath": "deps\\root\\bin\\root.exe",
+  "iisExpressRelativeExePath": "deps\\iisexpress\\iisexpress.exe",
+  "payloadRelativePath": "payload",
+  "allowOnlineDownloads": true,
+  "downloads": {
+    "rootZipUrl": "",
+    "iisExpressInstallerUrl": "",
+    "vcRedistInstallerUrl": ""
+  }
+}

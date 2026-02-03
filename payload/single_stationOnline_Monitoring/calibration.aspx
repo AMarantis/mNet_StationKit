@@ -1,0 +1,193 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="calibration.aspx.cs" Inherits="WebApplication2.WebForm1" %>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="keywords" content="FutureTechnologies, Can robots replace HR?, Tesla electric trucks, The robots are coming, Gadgets of the Future">
+    <meta name="description" content="">
+    <meta name="page_type" content="np-template-header-footer-from-plugin">
+    <title>Calibration</title>
+    <link rel="stylesheet" href="nicepage.css" media="screen">
+    <link rel="stylesheet" href="Calibration.css" media="screen">
+    <script class="u-script" type="text/javascript" src="jquery-1.9.1.min.js" defer=""></script>
+    <script class="u-script" type="text/javascript" src="nicepage.js" defer=""></script>
+    <meta name="generator" content="Nicepage 4.8.2, nicepage.com">
+    <link id="uthemegooglefont" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,100i,300,300i,400,400i,500,500i,700,700i,900,900i|Open+Sans:300,300i,400,400i,500,500i,600,600i,700,700i,800,800i">
+    
+    
+    <script type="application/ld+json">{
+		"@context": "http://schema.org",
+		"@type": "Organization",
+		"name": "mnetOnline",
+		"logo": "images/40c3ea32-af00-4634-804a-33fafc6743bc.png"
+}</script>
+    <meta name="theme-color" content="#478ac9">
+    <meta property="og:title" content="Calibration">
+    <meta property="og:type" content="website">
+</head>
+
+  <body class="u-black u-body u-xl-mode"><header class="u-clearfix u-header u-header" id="sec-0fb9"><div class="u-clearfix u-sheet u-sheet-1">
+      <form runat="server">
+      <asp:ScriptManager ID="ScriptManager1" runat="server"></asp:ScriptManager>
+      <asp:Timer ID="Timer1" Enabled="false" OnTick="Timer1_Tick" runat="server" Interval="90000" />
+        <a href="http://physicslab.eap.gr" class="u-image u-logo u-image-1" data-image-width="868" data-image-height="306" title="physics lab">
+          <img src="images/40c3ea32-af00-4634-804a-33fafc6743bc.png" class="u-logo-image u-logo-image-1" data-image-width="204">
+        </a>
+        <nav class="u-menu u-menu-dropdown u-offcanvas u-menu-1">
+          <div class="menu-collapse" style="font-size: 1rem; letter-spacing: 0px;">
+            <a class="u-button-style u-custom-active-border-color u-custom-active-color u-custom-border u-custom-border-color u-custom-borders u-custom-hover-border-color u-custom-hover-color u-custom-left-right-menu-spacing u-custom-padding-bottom u-custom-text-active-color u-custom-text-color u-custom-text-hover-color u-custom-top-bottom-menu-spacing u-nav-link u-text-active-palette-1-base u-text-hover-palette-2-base" href="#">
+              <svg class="u-svg-link" viewBox="0 0 24 24"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#menu-hamburger"></use></svg>
+              <svg class="u-svg-content" version="1.1" id="menu-hamburger" viewBox="0 0 16 16" x="0px" y="0px" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg"><g><rect y="1" width="16" height="2"></rect><rect y="7" width="16" height="2"></rect><rect y="13" width="16" height="2"></rect>
+</g></svg>
+            </a>
+          </div>
+          <div class="u-custom-menu u-nav-container">
+            <ul class="u-nav u-spacing-20 u-unstyled u-nav-1"><li class="u-nav-item"><a class="u-border-active-palette-1-base u-border-hover-palette-1-base u-button-style u-nav-link u-text-active-palette-1-base u-text-body-alt-color u-text-hover-palette-2-base" href="Home" style="padding: 10px 6px;">Home</a>
+</li><li class="u-nav-item"><a class="u-border-active-palette-1-base u-border-hover-palette-1-base u-button-style u-nav-link u-text-active-palette-1-base u-text-body-alt-color u-text-hover-palette-2-base" href="StationSelection" style="padding: 10px 6px;" >Station Selection</a>
+</li><li class="u-nav-item"><a class="u-border-active-palette-1-base u-border-hover-palette-1-base u-button-style u-nav-link u-text-active-palette-1-base u-text-body-alt-color u-text-hover-palette-2-base" href="Calibration" style="padding: 10px 6px;">Calibration</a>
+</li><li class="u-nav-item"><a class="u-border-active-palette-1-base u-border-hover-palette-1-base u-button-style u-nav-link u-text-active-palette-1-base u-text-body-alt-color u-text-hover-palette-2-base" href="OnlineMonitoring" style="padding: 10px 6px;">Online Monitoring</a>
+</li><li class="u-nav-item"><a class="u-border-active-palette-1-base u-border-hover-palette-1-base u-button-style u-nav-link u-text-active-palette-1-base u-text-body-alt-color u-text-hover-palette-2-base" href="https://moodle.physicslab.eap.gr/moodle/index.php" style="padding: 10px 6px;">μNet Educational Platform</a>
+</li><li class="u-nav-item"><a class="u-border-active-palette-1-base u-border-hover-palette-1-base u-button-style u-nav-link u-text-active-palette-1-base u-text-body-alt-color u-text-hover-palette-2-base" style="padding: 10px 6px;">See also...</a><div class="u-nav-popup"><ul class="u-h-spacing-20 u-nav u-unstyled u-v-spacing-10 u-nav-2"><li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="http://physicslab.eap.gr" target="_blank">Physics Laboratory</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="http://astroneu.eap.gr" target="_blank">Astroneu</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="http://microcosmics.eap.gr" target="_blank">μCosmics</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link u-white" href="http://physicslab.eap.gr/Weather.html" target="_blank">HOU Weather</a>
+</li></ul>
+</div>
+</li></ul>
+          </div>
+          <div class="u-custom-menu u-nav-container-collapse">
+            <div class="u-black u-container-style u-inner-container-layout u-opacity u-opacity-95 u-sidenav">
+              <div class="u-inner-container-layout u-sidenav-overflow">
+                <div class="u-menu-close"></div>
+                <ul class="u-align-center u-nav u-popupmenu-items u-unstyled u-nav-3"><li class="u-nav-item"><a class="u-button-style u-nav-link" href="Home" style="padding: 10px 6px;">Home</a>
+</li><li  class="u-nav-item"><a class="u-button-style u-nav-link" href="StationSelection" style="padding: 10px 6px;">Station Selection</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" href="Calibration" style="padding: 10px 6px;">Calibration</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" href="OnlineMonitoring" style="padding: 10px 6px;">Online Monitoring</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" href="https://moodle.physicslab.eap.gr/moodle/index.php" style="padding: 10px 6px;">μNet Educational Platform</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" style="padding: 10px 6px;">See also...</a><div class="u-nav-popup"><ul class="u-h-spacing-20 u-nav u-unstyled u-v-spacing-10 u-nav-4"><li class="u-nav-item"><a class="u-button-style u-nav-link" href="http://physicslab.eap.gr" target="_blank">Physics Laboratory</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" href="http://astroneu.eap.gr" target="_blank">Astroneu</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" href="http://microcosmics.eap.gr" target="_blank">μCosmics</a>
+</li><li class="u-nav-item"><a class="u-button-style u-nav-link" href="http://physicslab.eap.gr/Weather.html" target="_blank">HOU Weather</a>
+</li></ul>
+</div>
+</li></ul>
+              </div>
+            </div>
+            <div class="u-black u-menu-overlay u-opacity u-opacity-70"></div>
+          </div>
+        </nav>
+      </div></header>
+    <section class="u-align-left u-border-2 u-border-white u-clearfix u-grey-10 u-section-1" id="sec-e9ad">
+      <div class="u-clearfix u-sheet u-valign-bottom-xs u-sheet-1">
+        <h2 class="u-text u-text-1">Calibration</h2>
+        <div class="u-expanded-width u-tabs u-tabs-1">
+          <ul class="u-spacing-15 u-tab-list u-unstyled" role="tablist">
+            <li class="u-tab-item" role="presentation">                                    
+              <a runat="server"  href="#tab0da5" onserverclick="Tab_Response_Click"  class="active u-active-white u-button-style u-hover-palette-5-light-1 u-palette-5-dark-1 u-tab-link-1" id="linktab0da5" role="tab" aria-controls="tab0da5" aria-selected="false">Detector Response</a>
+            </li>
+            <li class="u-tab-item" role="presentation">
+              <a  runat="server"   href="#tab14b7" onserverclick="Tab_Sync_Click"    class="u-active-white u-button-style u-hover-palette-5-light-1 u-palette-5-dark-1 u-tab-link-2" id="linktab14b7" role="tab" aria-controls="tab14b7" aria-selected="true"> Syncrhonization</a>
+            </li>
+          </ul>
+          <div class="u-tab-content">
+            <div  runat="server"  class="u-black u-container-style u-tab-active u-tab-pane u-tab-pane-1" id="tab0da5" role="tabpanel" aria-labelledby="linktab0da5">
+              <div class="u-container-layout u-container-layout-1">
+<%--                <a href="https://nicepage.com/templates" class="u-border-6 u-border-palette-4-base u-btn u-btn-round u-button-style u-hover-palette-4-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-1">START</a>--%>
+                <asp:LinkButton ID="linkbtnStart" CssClass="u-border-6 u-border-palette-4-base u-btn u-btn-round u-button-style u-hover-palette-4-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-1" Text="START" onClick="Start_Acquisition_Response" runat="server" ></asp:LinkButton>
+                <div class="u-black u-border-2 u-border-palette-1-base u-container-style u-group u-shape-rectangle u-group-1">
+                  <div class="u-container-layout u-container-layout-2">
+                    <p class="u-text u-text-2">Detector Threshold 1</p>
+                    <p class="u-text u-text-3"><asp:TextBox ID="text_thr1"  OnTextChanged="text_thr1_changed" value="5.0" AutoPostBack="True" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-4">Detector Threshold 2</p>
+                    <p class="u-text u-text-5"><asp:TextBox ID="text_thr2"  OnTextChanged="text_thr2_changed" value="5.0" AutoPostBack="True" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-6">Detector Threshold 3</p>
+                    <p class="u-text u-text-7"><asp:TextBox ID="text_thr3"  OnTextChanged="text_thr3_changed" value="5.0" AutoPostBack="True" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                  </div>
+                </div>
+                <img class="u-image u-image-default u-image-1" src="images/a6ba946c-0a55-42bc-b221-cda60a6c00cf.gif" alt="" data-image-width="853" data-image-height="480">
+<%--                <a href="https://nicepage.dev" class="u-border-6 u-border-palette-2-base u-btn u-btn-round u-button-style u-hover-palette-2-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-2">STOP</a>--%>
+                <asp:LinkButton ID="linkbtnStop" Cssclass="u-border-6 u-border-palette-2-base u-btn u-btn-round u-button-style u-hover-palette-2-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-2" Text="STOP" onClick="Stop_Acquisition_Response" runat="server" ></asp:LinkButton>
+                <div class="u-border-6 u-border-white u-container-style u-expanded-width u-group u-group-2">
+                  <div class="u-container-layout u-container-layout-3">
+<%--                    <img class="u-expanded-width u-image u-image-2" src="images/outroot.jpeg" data-image-width="1496" data-image-height="572">--%>
+                    <asp:Image runat="server" class="u-expanded-width u-image u-image-2" id="img0" ImageUrl="images/outroot.jpeg" data-image-width="1496" data-image-height="572"></asp:Image>
+<%--                    <a href="https://nicepage.com/c/education-website-templates" class="u-border-none u-btn u-btn-round u-button-style u-hover-palette-5-dark-1 u-palette-5-base u-radius-50 u-btn-3">Recalculate Mean Pulse</a>
+                    <a href="https://nicepage.com/c/education-website-templates" class="u-border-none u-btn u-btn-round u-button-style u-hover-palette-5-dark-1 u-palette-5-base u-radius-50 u-btn-4">Recalculate DISTRIBUTIONS</a>--%>
+                    <asp:LinkButton ID="linkbtnRecalcpulse" class="u-border-none u-btn u-btn-round u-button-style u-hover-palette-5-dark-1 u-palette-5-base u-radius-50 u-btn-3" Text= "Recalculate Mean Pulse" OnClick="Clear_Pulses" runat="server"> </asp:LinkButton>
+                    <asp:LinkButton ID="linkbtnRecalcDistr" class="u-border-none u-btn u-btn-round u-button-style u-hover-palette-5-dark-1 u-palette-5-base u-radius-50 u-btn-4" Text= "Recalculate Distributions" OnClick="Clear_Distributions" runat="server"></asp:LinkButton>
+                    <p class="u-text u-text-8"><asp:Label id="Status_resp" runat="server" Text="StatusResp"></asp:Label></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div  runat="server" class="u-align-left u-black u-container-style u-tab-pane u-tab-pane-2" id="tab14b7" role="tabpanel" aria-labelledby="linktab14b7">
+              <div class="u-container-layout u-container-layout-4">
+                <div class="u-black u-border-2 u-border-palette-1-base u-container-style u-expanded-width-xs u-expanded-width-xs u-group u-shape-rectangle u-group-3">
+                  <div class="u-container-layout u-container-layout-5">
+                    <p class="u-text u-text-9">Timing Threshold 1</p>
+                    <p class="u-text u-text-10"><asp:TextBox ID="text_thr1_sync"  OnTextChanged="text_thr1_sync_changed" AutoPostBack="True" value="5.0" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-11">Detector Threshold 1</p>
+                    <p class="u-text u-text-12"><asp:TextBox ID="Tim1"  OnTextChanged="text_tim1_sync_changed" AutoPostBack="True"  value="5.0" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-13"><asp:TextBox ID="Tim2"  OnTextChanged="text_tim2_sync_changed" AutoPostBack="True"  value="5.0" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-14">Detector Threshold 2</p>
+                    <p class="u-text u-text-15"><asp:TextBox ID="text_thr2_sync"  OnTextChanged="text_thr2_sync_changed" AutoPostBack="True"  value="5.0" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-16">Timing Threshold 2</p>
+                    <p class="u-text u-text-17">Timing Threshold 3</p>
+                    <p class="u-text u-text-18"><asp:TextBox ID="text_thr3_sync" OnTextChanged="text_thr3_sync_changed"  AutoPostBack="True"  value="5.0" runat="server" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <p class="u-text u-text-19">Detector Threshold 3</p>
+                    <p class="u-text u-text-20"><asp:TextBox ID="Tim3" OnTextChanged="text_tim3_sync_changed" AutoPostBack="True" runat="server" value="5.0" ForeColor="Black" Height="30px" Width="55px"></asp:TextBox>mV</p>
+                    <div class="u-border-3 u-border-grey-dark-1 u-line u-line-horizontal u-line-1"></div>
+                    
+                    <p class="u-text u-text-21"><asp:CheckBox id="checkbox1" runat="server" AutoPostBack="True" Text="" TextAlign="Left" OnCheckedChanged="Check_Clicked"/>Use Constant Fraction Timing</p>
+                  </div>
+                </div>
+                <img class="u-image u-image-default u-image-3" src="images/a6ba946c-0a55-42bc-b221-cda60a6c00cf-8.gif" alt="" data-image-width="853" data-image-height="480">
+<%--                <a href="https://nicepage.com/templates" class="u-border-6 u-border-palette-4-base u-btn u-btn-round u-button-style u-hover-palette-4-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-5">START</a>--%>
+                <asp:LinkButton ID="LinkButton1" CssClass="u-border-6 u-border-palette-4-base u-btn u-btn-round u-button-style u-hover-palette-4-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-5" Text="START" onClick="Start_Acquisition_Sync" runat="server" ></asp:LinkButton>
+<%--                <a href="https://nicepage.dev" class="u-border-6 u-border-palette-2-base u-btn u-btn-round u-button-style u-hover-palette-2-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-6">STOP</a>--%>
+                <asp:LinkButton ID="LinkButton2" Cssclass="u-border-6 u-border-palette-2-base u-btn u-btn-round u-button-style u-hover-palette-2-base u-none u-radius-6 u-text-hover-white u-text-white u-btn-6" Text="STOP" onClick="Stop_Acquisition_Sync" runat="server" ></asp:LinkButton>
+<%--                <img class="u-image u-image-default u-image-4" src="images/outroot2.jpeg" alt="" data-image-width="1496" data-image-height="572">--%>
+                <asp:Image runat="server" class="u-image u-image-default u-image-4" id="img1" ImageUrl="images/outroot2.jpeg" data-image-width="1496" data-image-height="572"></asp:Image>
+<%--                <a href="https://nicepage.com/c/education-website-templates" class="u-border-none u-btn u-btn-round u-button-style u-hover-palette-5-dark-1 u-palette-5-base u-radius-50 u-btn-7">Clear Data</a>--%>
+                <asp:LinkButton ID="LinkButtonClearAll" class="u-border-none u-btn u-btn-round u-button-style u-hover-palette-5-dark-1 u-palette-5-base u-radius-50 u-btn-7" Text="Clear Data" OnClick="Clear_All" runat="server"> </asp:LinkButton>
+                <p class="u-text u-text-22"><asp:Label id="Status_sync" runat="server" Text="StatusSync"></asp:Label></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    
+    <footer class="u-align-center-md u-align-center-sm u-align-center-xs u-black u-clearfix u-footer" id="sec-8f2c"><div class="u-clearfix u-sheet u-valign-middle-xl u-sheet-1">
+        <p class="u-align-center-lg u-align-center-md u-align-center-xl u-text u-text-1">Physics Laboratory,&nbsp;Parodos Aristotelous 18,&nbsp;&nbsp;Hellenic Open University Campus, Building D, Postcode 26335,&nbsp; Patra, Greece<br>&nbsp; <span class="u-icon"><svg class="u-svg-content" viewBox="0 0 480.56 480.56" x="0px" y="0px" style="width: 1em; height: 1em;"><g><g><path d="M365.354,317.9c-15.7-15.5-35.3-15.5-50.9,0c-11.9,11.8-23.8,23.6-35.5,35.6c-3.2,3.3-5.9,4-9.8,1.8    c-7.7-4.2-15.9-7.6-23.3-12.2c-34.5-21.7-63.4-49.6-89-81c-12.7-15.6-24-32.3-31.9-51.1c-1.6-3.8-1.3-6.3,1.8-9.4    c11.9-11.5,23.5-23.3,35.2-35.1c16.3-16.4,16.3-35.6-0.1-52.1c-9.3-9.4-18.6-18.6-27.9-28c-9.6-9.6-19.1-19.3-28.8-28.8    c-15.7-15.3-35.3-15.3-50.9,0.1c-12,11.8-23.5,23.9-35.7,35.5c-11.3,10.7-17,23.8-18.2,39.1c-1.9,24.9,4.2,48.4,12.8,71.3    c17.6,47.4,44.4,89.5,76.9,128.1c43.9,52.2,96.3,93.5,157.6,123.3c27.6,13.4,56.2,23.7,87.3,25.4c21.4,1.2,40-4.2,54.9-20.9    c10.2-11.4,21.7-21.8,32.5-32.7c16-16.2,16.1-35.8,0.2-51.8C403.554,355.9,384.454,336.9,365.354,317.9z"></path><path d="M346.254,238.2l36.9-6.3c-5.8-33.9-21.8-64.6-46.1-89c-25.7-25.7-58.2-41.9-94-46.9l-5.2,37.1    c27.7,3.9,52.9,16.4,72.8,36.3C329.454,188.2,341.754,212,346.254,238.2z"></path><path d="M403.954,77.8c-42.6-42.6-96.5-69.5-156-77.8l-5.2,37.1c51.4,7.2,98,30.5,134.8,67.2c34.9,34.9,57.8,79,66.1,127.5    l36.9-6.3C470.854,169.3,444.354,118.3,403.954,77.8z"></path>
+</g>
+</g></svg><img></span>&nbsp; +302610367537&nbsp; &nbsp; &nbsp; <span class="u-icon"><svg class="u-svg-content" viewBox="0 0 230.17 230.17" x="0px" y="0px" style="width: 1em; height: 1em;"><g><path d="M230,49.585c0-0.263,0.181-0.519,0.169-0.779l-70.24,67.68l70.156,65.518c0.041-0.468-0.085-0.94-0.085-1.418V49.585z"></path><path d="M149.207,126.901l-28.674,27.588c-1.451,1.396-3.325,2.096-5.2,2.096c-1.836,0-3.672-0.67-5.113-2.013l-28.596-26.647   L11.01,195.989c1.717,0.617,3.56,1.096,5.49,1.096h197.667c2.866,0,5.554-0.873,7.891-2.175L149.207,126.901z"></path><path d="M115.251,138.757L222.447,35.496c-2.427-1.443-5.252-2.411-8.28-2.411H16.5c-3.943,0-7.556,1.531-10.37,3.866   L115.251,138.757z"></path><path d="M0,52.1v128.484c0,1.475,0.339,2.897,0.707,4.256l69.738-67.156L0,52.1z"></path>
+</g></svg><img></span>&nbsp;<a title="mailto:physicslab@eap.gr" href="mailto:physicslab@eap.gr" class="u-active-none u-border-none u-btn u-button-style u-hover-none u-none u-text-palette-1-base u-btn-1">physicslab@eap.gr</a>
+          <br>
+        </p>
+      </div></footer>
+<%--    <section class="u-backlink u-clearfix u-grey-80">
+      <a class="u-link" href="css-templates" target="_blank">
+        <span>Free CSS Templates</span>
+      </a>
+      <p class="u-text">
+        <span>created with</span>
+      </p>
+      <a class="u-link" href="static-site-generator" target="_blank">
+        <span>Static Site Generators</span>
+      </a>. 
+    </section>--%>
+      <span style="height: 64px; width: 64px; margin-left: 0px; margin-right: auto; margin-top: 0px; background-image: none; right: 20px; bottom: 20px" class="u-back-to-top u-icon u-icon-circle u-opacity u-opacity-85 u-palette-1-base u-spacing-15" data-href="#">
+        <svg class="u-svg-link" preserveAspectRatio="xMidYMin slice" viewBox="0 0 551.13 551.13"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#svg-1d98"></use></svg>
+        <svg class="u-svg-content" enable-background="new 0 0 551.13 551.13" viewBox="0 0 551.13 551.13" xmlns="http://www.w3.org/2000/svg" id="svg-1d98"><path d="m275.565 189.451 223.897 223.897h51.668l-275.565-275.565-275.565 275.565h51.668z"></path></svg>
+    </span>
+            </form>
+
+
+  </body>
+
+</html>

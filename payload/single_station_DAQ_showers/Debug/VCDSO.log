@@ -1,0 +1,10 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  VCDSOView.cpp
+C:\Users\itdept-p\Documents\single_station_DAQ_showers\VCDSOView.cpp(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (1253). Save the file in Unicode format to prevent data loss
+C:\Users\itdept-p\Documents\single_station_DAQ_showers\VCDSODoc.h(1,1): warning C4819: The file contains a character that cannot be represented in the current code page (1253). Save the file in Unicode format to prevent data loss
+C:\Users\itdept-p\Documents\single_station_DAQ_showers\VCDSOView.cpp(138,20): warning C4244: 'initializing': conversion from 'double' to 'ULONG', possible loss of data
+  Hard.cpp
+C:\Users\itdept-p\Documents\single_station_DAQ_showers\Hard.cpp(185,20): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\itdept-p\Documents\single_station_DAQ_showers\Hard.cpp(181,15): warning C4101: 'st': unreferenced local variable
+  Generating Code...
+  VCDSO.vcxproj -> C:\Users\itdept-p\Documents\single_station_DAQ_showers\Debug\VCDSO.exe
