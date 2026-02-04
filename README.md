@@ -42,17 +42,23 @@ Minimum:
 
 2) Install dependencies (one-time):
 
-Option A (manual):
+Recommended (automatic):
+
+- Run as Admin: `scripts/Install-Dependencies.cmd`
+
+This checks and installs (if missing):
+- VC++ redist (x64)
+- IIS Express
+- ROOT (portable ZIP or installer EXE depending on `config/station.json`)
+
+Fallback (manual):
 
 - Install VC++ redist (x64)
 - Install IIS Express (so `C:\Program Files\IIS Express\iisexpress.exe` exists)
 - Download ROOT ZIP and extract so this exists:
   - `mNetStationKit\deps\root\bin\root.exe`
 
-Option B (semi-automatic):
-
-- Edit `config/station.json` and set `downloads.*` URLs
-- Run as Admin: `scripts/Install-Dependencies.cmd`
+You can also edit `config/station.json` → `downloads.*` URLs to match your environment.
 
 3) Run one-time setup (Admin):
 
@@ -92,9 +98,13 @@ Expected folders:
   - Easiest: rename the USB volume label to match `config/station.json` → `usbVolumeLabel` (default: `mNetStation`)
   - Or ensure it mounts as `E:`
 - `root.exe` not found:
-  - Ensure `deps/root/bin/root.exe` exists (watch out for an extra top folder inside the ZIP)
+  - Preferred: ensure `deps/root/bin/root.exe` exists (watch out for an extra top folder inside the ZIP)
+  - Alternative: install ROOT system-wide and ensure it provides `...\bin\root.exe` (the kit will try to auto-detect common locations)
 - IIS Express not found:
   - Ensure `C:\Program Files\IIS Express\iisexpress.exe` exists, or provide `deps/iisexpress/iisexpress.exe`
+- Browser shows error about `bin\\roslyn\\csc.exe` missing:
+  - Confirm `payload/single_stationOnline_Monitoring/bin/roslyn/csc.exe` exists
+  - If it keeps disappearing, check Windows Security/Defender quarantine and allow/exclude that folder
 - Port 8080 busy:
   - Edit `config/station.json` → `monitoringPort`
 

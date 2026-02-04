@@ -15,7 +15,7 @@ Monitoring URL: `http://localhost:8080/`
 - Laptop σταθμού με Windows 11
 - Το USB stick (ιδανικά 64GB) μόνιμα κουμπωμένο
 - Δικαιώματα Administrator (θα πατήσεις “Yes” σε UAC)
-- Σύνδεση Internet (μόνο για να κατέβουν 2–3 installers + ROOT ZIP)
+- Σύνδεση Internet (μόνο για να κατέβουν 2–3 installers + ROOT)
 - Συνδεδεμένο Hantek (σε θύρα USB του laptop)
 
 ---
@@ -34,32 +34,40 @@ Monitoring URL: `http://localhost:8080/`
 
 ---
 
-## 2) Εγκατέστησε τα απαραίτητα (μία φορά)
+## 2) Αυτόματη εγκατάσταση dependencies (μία φορά – προτείνεται)
 
-Θέλουμε 3 πράγματα:
+Αυτό είναι το βήμα που αντικαθιστά τα “χειροκίνητα downloads / εγκαταστάσεις”.
 
-### 2.1 Microsoft Visual C++ Redistributable (x64)
+1) Πήγαινε: `E:\mNetStationKit\scripts\`
+2) Δεξί κλικ `Install-Dependencies.cmd` → **Run as administrator**
 
-Κατέβασε/εγκατέστησε το **Visual C++ Redistributable (x64)** από τη Microsoft.
+Το script ελέγχει και (αν λείπουν) κατεβάζει/εγκαθιστά:
+- **Microsoft Visual C++ Redistributable (x64)**
+- **IIS Express**
+- **ROOT** (είτε portable `.zip` είτε installer `.exe`, ανάλογα με το URL στο `config\station.json`)
 
-Αν λείπει, συχνά βγάζει errors τύπου “missing DLL”.
+Σημείωση για ROOT: αν κατεβαίνει ως installer `.exe`, μπορεί να ανοίξει παράθυρο εγκατάστασης.  
+Απλά ακολούθησε τα default βήματα (Next/Install). Μετά το script θα προσπαθήσει να βρει το `root.exe`.
 
-### 2.2 IIS Express
+### 2.1 Αν θες “offline” (χωρίς internet)
 
-Κατέβασε/εγκατέστησε **IIS Express** (Microsoft).
+Μπορείς να βάλεις installers/zip μέσα στο:
 
-Μετά την εγκατάσταση πρέπει να υπάρχει:
+- `E:\mNetStationKit\deps\installers\`
 
-- `C:\Program Files\IIS Express\iisexpress.exe`
+και μετά να τρέξεις πάλι `Install-Dependencies.cmd`.  
+(Εναλλακτικά, βάλε `allowOnlineDownloads=false` στο `config\station.json`.)
 
-### 2.3 ROOT (portable)
+### 2.2 Αν προτιμάς “χειροκίνητα” (fallback)
 
-Κατέβασε **ROOT για Windows x64** σε ZIP και κάνε extract **μέσα** στο kit ώστε να υπάρχει ακριβώς:
+Αν δεν θες να τρέξεις το `Install-Dependencies.cmd`, τότε πρέπει να ισχύουν:
 
-- `E:\mNetStationKit\deps\root\bin\root.exe`
-
-Προσοχή: αρκετά ZIP έχουν “έξτρα” top folder (π.χ. `root_v6.xx.xx\...`).  
-Το τελικό path πρέπει να είναι **ακριβώς** `deps\root\bin\root.exe`.
+- IIS Express installed:
+  - `C:\Program Files\IIS Express\iisexpress.exe`
+- VC++ redist installed (x64)
+- ROOT διαθέσιμο με έναν από τους δύο τρόπους:
+  - Portable: `E:\mNetStationKit\deps\root\bin\root.exe`
+  - Ή system install: κάπου σε `C:\root_v*\bin\root.exe`
 
 ---
 
@@ -195,6 +203,18 @@ Monitoring URL: `http://localhost:8080/`
 - Κλείσε και ξανάνοιξε το DAQ:
   - `scripts/Stop-DAQ.cmd`
   - μετά `Start-DAQ-Calibration.cmd` ή `Start-DAQ-Showers.cmd`
+
+### E) Error για `bin\roslyn\csc.exe` (monitoring δεν ανοίγει)
+
+Αν στο `http://localhost:8080/` δεις μήνυμα τύπου “Could not find … `bin\roslyn\csc.exe`”, τότε:
+
+1) Έλεγξε ότι υπάρχει ο φάκελος:
+   - `E:\mNetStationKit\payload\single_stationOnline_Monitoring\bin\roslyn\`
+   και μέσα υπάρχουν `csc.exe`, `VBCSCompiler.exe`, `vbc.exe`.
+2) Αν “εξαφανίστηκαν”, συνήθως τα έβγαλε το Windows Security/Defender:
+   - Windows Security → Virus & threat protection → Protection history → Restore/Allow
+   - (προαιρετικά) πρόσθεσε Exclusion για:
+     - `E:\mNetStationKit\payload\single_stationOnline_Monitoring\bin\roslyn`
 
 ---
 
