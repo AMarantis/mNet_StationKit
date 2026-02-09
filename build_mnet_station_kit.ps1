@@ -22,6 +22,24 @@ function Assert-Command {
   }
 }
 
+function Expand-ZipToDirectory {
+  param(
+    [Parameter(Mandatory = $true)][string]$ZipPath,
+    [Parameter(Mandatory = $true)][string]$DestinationPath
+  )
+
+  Ensure-Directory -Path $DestinationPath
+
+  # Prefer tar.exe on Windows (more reliable than Expand-Archive in some environments).
+  $tar = Get-Command "tar.exe" -ErrorAction SilentlyContinue
+  if ($tar) {
+    & $tar.Source -xf $ZipPath -C $DestinationPath
+    return
+  }
+
+  Expand-Archive -Path $ZipPath -DestinationPath $DestinationPath
+}
+
 $repoRoot = Split-Path -Parent $PSCommandPath
 $distRoot = Join-Path $repoRoot "dist"
 $outDir = Join-Path $distRoot "mNetStationKit"
@@ -47,7 +65,7 @@ try {
   # Expand-Archive -Force can fail when the destination exists or is in a partial state.
   # Extract to a fresh temp folder first, then move it into place.
   Write-Host "Extracting to: $tmpExtractDir"
-  Expand-Archive -Path $zipPath -DestinationPath $tmpExtractDir
+  Expand-ZipToDirectory -ZipPath $zipPath -DestinationPath $tmpExtractDir
 
   # Remove repo-only helper files from the packaged kit (not needed on the station USB).
   @(
