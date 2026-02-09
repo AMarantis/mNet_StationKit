@@ -11,6 +11,7 @@
   "downloads": {
     "rootZipUrl": "https://root.cern/download/root_v6.36.06.win64.python311.vc17.exe",
     "iisExpressInstallerUrl": "https://download.microsoft.com/download/c/e/8/ce8d18f5-d4c0-45b5-b531-adecd637a1aa/iisexpress_amd64_en-US.msi",
-    "vcRedistInstallerUrl": "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+    "vcRedistInstallerUrl": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+    "vsBuildToolsUrl": "https://aka.ms/vs/17/release/vs_BuildTools.exe"
   }
 }

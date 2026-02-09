@@ -33,6 +33,7 @@ Minimum:
 1) **ROOT for Windows (x64)** (required for plots)
 2) **IIS Express** (required for the monitoring website without IIS)
 3) **Microsoft Visual C++ Redistributable (x64)** (often required by ROOT/DAQ DLLs)
+4) **Visual Studio Build Tools (C++ toolchain + Windows SDK)** (required by ROOT/Cling to compile macros on Windows)
 
 ## Quick start (on the station PC)
 
@@ -50,6 +51,7 @@ This checks and installs (if missing):
 - VC++ redist (x64)
 - IIS Express
 - ROOT (portable ZIP or installer EXE depending on `config/station.json`)
+- Visual Studio Build Tools (C++ workload; needed for ROOT macros/plots)
 
 Fallback (manual):
 

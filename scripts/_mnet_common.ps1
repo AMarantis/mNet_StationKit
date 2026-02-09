@@ -5,6 +5,61 @@ function Get-MNetKitRoot {
   return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 
+function Find-VsDevCmdBat {
+  $pf86 = ${env:ProgramFiles(x86)}
+  if (-not $pf86 -or $pf86.Trim() -eq "") { $pf86 = $env:ProgramFiles }
+  if (-not $pf86 -or $pf86.Trim() -eq "") { return $null }
+
+  $roots = @(
+    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\BuildTools"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\Community"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\Professional"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\Enterprise"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\BuildTools"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\Community"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\Professional"),
+    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\Enterprise")
+  ) | Where-Object { $_ -and (Test-Path $_) }
+
+  foreach ($r in $roots) {
+    $cand = Join-Path $r "Common7\\Tools\\VsDevCmd.bat"
+    if (Test-Path $cand) { return $cand }
+  }
+  return $null
+}
+
+function Import-VsDevCmdEnv {
+  param([string]$VsDevCmdBat = $null)
+
+  if (-not $VsDevCmdBat) { $VsDevCmdBat = Find-VsDevCmdBat }
+  if (-not $VsDevCmdBat) { return $false }
+
+  # Load the VS "Developer Command Prompt" environment into this PowerShell process.
+  # This is needed for ROOT/Cling to find MSVC headers (e.g. <new>) on Windows.
+  $cmd = "`"$VsDevCmdBat`" -no_logo -arch=x64 -host_arch=x64 >nul && set"
+  $lines = cmd.exe /c $cmd
+
+  foreach ($line in $lines) {
+    if (-not $line) { continue }
+    $m = [regex]::Match($line, "^(?<k>[^=]+)=(?<v>.*)$")
+    if (-not $m.Success) { continue }
+    $k = $m.Groups["k"].Value
+    $v = $m.Groups["v"].Value
+    try { Set-Item -Path ("Env:" + $k) -Value $v } catch {}
+  }
+
+  return $true
+}
+
+function Test-CppToolchainAvailable {
+  try {
+    $null = Get-Command cl.exe -ErrorAction Stop
+    return $true
+  } catch {
+    return $false
+  }
+}
+
 function Get-MNetKitRootDriveLetter {
   $kitRoot = Get-MNetKitRoot
   $drive = Split-Path -Path $kitRoot -Qualifier

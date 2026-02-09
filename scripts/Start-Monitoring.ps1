@@ -12,6 +12,19 @@ $iisExpress = Get-IisExpressExe -Config $cfg
 
 $sitePath = Get-PayloadOrRepoPath -Config $cfg -RepoRelativePath "DAQ mNet/single_stationOnline_Monitoring" -PayloadSubPath "single_stationOnline_Monitoring"
 
+# ROOT macros are compiled by Cling and typically need MSVC headers/SDK on Windows.
+# Try to import the Visual Studio Developer Command Prompt environment so root.exe can find <new>, etc.
+$cppOk = Test-CppToolchainAvailable
+if (-not $cppOk) {
+  $loaded = Import-VsDevCmdEnv
+  if ($loaded) { $cppOk = Test-CppToolchainAvailable }
+}
+if (-not $cppOk) {
+  Write-Host "WARNING: C++ Build Tools / Windows SDK not detected (cl.exe not found)."
+  Write-Host "Plots may NOT update because ROOT cannot compile macros (e.g. fatal error: '<new>' file not found)."
+  Write-Host "Fix: Run scripts\\Install-Dependencies.cmd (as Admin) or install 'Visual Studio Build Tools 2022' with C++ workload."
+}
+
 # IIS Express runs as the current user; child cmd processes inherit env vars.
 $env:MNET_ROOT_EXE = $rootExe
 

@@ -89,6 +89,70 @@ function Test-VcRedistInstalled {
   return $false
 }
 
+function Find-VsBuildToolsInstaller {
+  $dir = Join-Path $kitRoot "deps/installers"
+  if (-not (Test-Path $dir)) { return $null }
+
+  return (Get-ChildItem -Path $dir -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match "(?i)vs.*buildtools.*\\.exe$" } |
+    Sort-Object -Property LastWriteTime -Descending |
+    Select-Object -First 1)
+}
+
+function Ensure-VsBuildToolsCpp {
+  if (Test-CppToolchainAvailable) {
+    Write-Host "C++ toolchain already available (cl.exe found)."
+    return
+  }
+
+  # If VS is installed but the env isn't loaded, try to load it.
+  $vsDev = Find-VsDevCmdBat
+  if ($vsDev) {
+    Write-Host "Visual Studio installation detected; loading Developer environment..."
+    $null = Import-VsDevCmdEnv -VsDevCmdBat $vsDev
+    if (Test-CppToolchainAvailable) {
+      Write-Host "C++ toolchain now available (after loading VsDevCmd)."
+      return
+    }
+  }
+
+  Write-Host "C++ Build Tools not found; installing Visual Studio Build Tools (C++ workload)..."
+
+  $installer = Find-VsBuildToolsInstaller
+  if (-not $installer) {
+    $dl = Get-Downloads
+    $url = $null
+    if ($dl -and $dl.vsBuildToolsUrl) { $url = $dl.vsBuildToolsUrl }
+    if (-not $url) {
+      throw "Missing downloads.vsBuildToolsUrl in config/station.json (needed to auto-install C++ Build Tools)."
+    }
+    $out = Get-DownloadCachePath -Url $url
+    Download-File -Url $url -OutFile $out
+    $installer = Get-Item $out
+  }
+
+  # Install minimal C++ build tools. This can take several GB and several minutes.
+  $args = @(
+    "--quiet",
+    "--wait",
+    "--norestart",
+    "--nocache",
+    "--add", "Microsoft.VisualStudio.Workload.VCTools",
+    "--includeRecommended"
+  )
+
+  Write-Host "Running Build Tools installer (this may take a while)..."
+  Start-Process -FilePath $installer.FullName -ArgumentList $args -Wait
+
+  # Best effort: load env and verify cl.exe.
+  $null = Import-VsDevCmdEnv
+  if (-not (Test-CppToolchainAvailable)) {
+    throw "Build Tools install finished, but cl.exe is still not available. Try rebooting, then rerun Install-Dependencies."
+  }
+
+  Write-Host "C++ toolchain installed and available (cl.exe found)."
+}
+
 function Ensure-RootFromZip {
   param([Parameter(Mandatory=$true)][string]$ZipPath)
 
@@ -217,6 +281,9 @@ if (Test-VcRedistInstalled) {
     Install-ExeQuiet -Path $out -Args @("/install", "/quiet", "/norestart")
   }
 }
+
+# C++ Build Tools / Windows SDK (needed by ROOT/Cling to compile macros on Windows)
+Ensure-VsBuildToolsCpp
 
 # ROOT (portable zip -> deps/root)
 try {

@@ -45,6 +45,7 @@ Monitoring URL: `http://localhost:8080/`
 - **Microsoft Visual C++ Redistributable (x64)**
 - **IIS Express**
 - **ROOT** (είτε portable `.zip` είτε installer `.exe`, ανάλογα με το URL στο `config\station.json`)
+- **Visual Studio Build Tools (C++ toolchain + Windows SDK)** (απαραίτητο για να παράγονται τα plots από το ROOT σε Windows)
 
 Σημείωση για ROOT: αν κατεβαίνει ως installer `.exe`, μπορεί να ανοίξει παράθυρο εγκατάστασης.  
 Απλά ακολούθησε τα default βήματα (Next/Install). Μετά το script θα προσπαθήσει να βρει το `root.exe`.
