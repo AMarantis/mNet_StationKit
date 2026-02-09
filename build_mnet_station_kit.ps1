@@ -26,6 +26,7 @@ $repoRoot = Split-Path -Parent $PSCommandPath
 $distRoot = Join-Path $repoRoot "dist"
 $outDir = Join-Path $distRoot "mNetStationKit"
 $zipPath = Join-Path $distRoot "mNetStationKit.zip"
+$tmpExtractDir = Join-Path $distRoot ("_extract_" + [guid]::NewGuid().ToString())
 
 Write-Host "Repo: $repoRoot"
 
@@ -36,25 +37,37 @@ if (-not (Test-Path (Join-Path $repoRoot ".git"))) {
 }
 
 Ensure-Directory -Path $distRoot
-Remove-IfExists -Path $outDir
+Remove-IfExists -Path $tmpExtractDir
 Remove-IfExists -Path $zipPath
 
 Write-Host "Creating archive: $zipPath"
 & git -C $repoRoot archive --format=zip --output $zipPath HEAD
 
-Write-Host "Extracting to: $outDir"
-Expand-Archive -Path $zipPath -DestinationPath $outDir -Force
+try {
+  # Expand-Archive -Force can fail when the destination exists or is in a partial state.
+  # Extract to a fresh temp folder first, then move it into place.
+  Write-Host "Extracting to: $tmpExtractDir"
+  Expand-Archive -Path $zipPath -DestinationPath $tmpExtractDir
 
-# Remove repo-only helper files from the packaged kit (not needed on the station USB).
-@(
-  ".gitignore",
-  ".gitattributes",
-  "build_mnet_station_kit.sh",
-  "build_mnet_station_kit.ps1",
-  "build_mnet_station_kit.cmd"
-) | ForEach-Object {
-  $p = Join-Path $outDir $_
-  if (Test-Path $p) { Remove-Item -Force -Path $p }
+  # Remove repo-only helper files from the packaged kit (not needed on the station USB).
+  @(
+    ".gitignore",
+    ".gitattributes",
+    "build_mnet_station_kit.sh",
+    "build_mnet_station_kit.ps1",
+    "build_mnet_station_kit.cmd"
+  ) | ForEach-Object {
+    $p = Join-Path $tmpExtractDir $_
+    if (Test-Path $p) { Remove-Item -Force -Path $p }
+  }
+
+  Remove-IfExists -Path $outDir
+  Move-Item -Path $tmpExtractDir -Destination $outDir
+} finally {
+  # Best-effort cleanup if something failed before Move-Item.
+  if (Test-Path $tmpExtractDir) {
+    Remove-Item -Force -Recurse -Path $tmpExtractDir -ErrorAction SilentlyContinue
+  }
 }
 
 Write-Host ""

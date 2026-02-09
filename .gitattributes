@@ -1,11 +1,16 @@
 * text=auto
 
-*.sh text eol=lf
+# Packaging scripts
+build_mnet_station_kit.sh text eol=lf
+build_mnet_station_kit.cmd text eol=crlf
+build_mnet_station_kit.ps1 text eol=crlf
 
-*.cmd text eol=crlf
-*.bat text eol=crlf
-*.ps1 text eol=crlf
+# Station kit scripts (Windows)
+scripts/*.cmd text eol=crlf
+scripts/*.ps1 text eol=crlf
 
-*.sln text eol=crlf
-*.csproj text eol=crlf
+# ROOT macro runner scripts used by the monitoring site (Windows)
+payload/single_stationOnline_Monitoring/ProgramFiles/*.cmd text eol=crlf
 
+# Keep the main WebForms project file consistent on Windows
+payload/single_stationOnline_Monitoring/WebApplication2.csproj text eol=crlf
