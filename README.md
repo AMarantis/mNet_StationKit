@@ -3,14 +3,14 @@
 Run the existing μNet station software with **minimal manual Windows setup**:
 
 - No Windows IIS configuration
-- No Visual Studio / CMake / Python required on the station
+- No full Visual Studio IDE / CMake / Python required on the station (but Visual Studio Build Tools are required)
 - Monitoring runs locally on: `http://localhost:8080/`
 
 This kit is designed for **Windows 11 Home** school laptops and “USB-first” deployments.
 
 ## Greek user guide (recommended)
 
-- Step-by-step (non-technical): `SETUP_GR.md`
+- Step-by-step (non-technical, detailed): `SETUP_GR.md`
 
 ## What this kit does
 
@@ -33,7 +33,7 @@ Minimum:
 1) **ROOT for Windows (x64)** (required for plots)
 2) **IIS Express** (required for the monitoring website without IIS)
 3) **Microsoft Visual C++ Redistributable (x64)** (often required by ROOT/DAQ DLLs)
-4) **Visual Studio Build Tools (C++ toolchain + Windows SDK)** (required by ROOT/Cling to compile macros on Windows)
+4) **Visual Studio Build Tools 2022** (select **Desktop development with C++**) (required by ROOT/Cling to compile macros on Windows)
 
 ## Quick start (on the station PC)
 
@@ -43,7 +43,12 @@ Minimum:
 
 2) Install dependencies (one-time):
 
-Recommended (automatic):
+Required (manual, one-time):
+
+- Install **Visual Studio Build Tools 2022** with **Desktop development with C++**.
+  - Tip: set installer "Download cache" to a fixed disk path like `C:\VSCache`.
+
+Recommended (automatic, after VS Build Tools):
 
 - Run as Admin: `scripts/Install-Dependencies.cmd`
 
@@ -51,7 +56,6 @@ This checks and installs (if missing):
 - VC++ redist (x64)
 - IIS Express
 - ROOT (portable ZIP or installer EXE depending on `config/station.json`)
-- Visual Studio Build Tools (C++ workload; needed for ROOT macros/plots)
 
 Fallback (manual):
 
@@ -75,7 +79,7 @@ You can also edit `config/station.json` → `downloads.*` URLs to match your env
 5) Start monitoring:
 
 - `scripts/Start-Monitoring.cmd`
-- Open: `http://localhost:8080/`
+- It opens the default browser at: `http://localhost:8080/`
 
 ## Data paths (important)
 

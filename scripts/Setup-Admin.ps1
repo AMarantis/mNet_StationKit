@@ -61,5 +61,16 @@ try {
 # Ensure ROOT is present
 $null = Get-RootExe -Config $cfg
 
+try {
+  $shortcutScript = Join-Path $PSScriptRoot "Create-Desktop-Shortcuts.ps1"
+  if (Test-Path $shortcutScript) {
+    Write-Host "Creating desktop shortcuts..."
+    & $shortcutScript
+  }
+} catch {
+  Write-Host "WARNING: Could not create desktop shortcuts automatically."
+  Write-Host "You can run scripts\\Create-Desktop-Shortcuts.cmd manually."
+}
+
 Write-Host "Setup complete."
-Write-Host "Next: run Start-Monitoring.cmd and open http://localhost:$($cfg.monitoringPort)/"
+Write-Host "Next: run Start-Monitoring.cmd (it will open the browser automatically)."

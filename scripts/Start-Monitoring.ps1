@@ -22,7 +22,7 @@ if (-not $cppOk) {
 if (-not $cppOk) {
   Write-Host "WARNING: C++ Build Tools / Windows SDK not detected (cl.exe not found)."
   Write-Host "Plots may NOT update because ROOT cannot compile macros (e.g. fatal error: '<new>' file not found)."
-  Write-Host "Fix: Run scripts\\Install-Dependencies.cmd (as Admin) or install 'Visual Studio Build Tools 2022' with C++ workload."
+  Write-Host "Fix: Install 'Visual Studio Build Tools 2022' and select 'Desktop development with C++', then rerun Start-Monitoring."
 }
 
 # IIS Express runs as the current user; child cmd processes inherit env vars.
@@ -42,4 +42,12 @@ Write-Host "ROOT: $rootExe"
 
 Start-Process -FilePath $iisExpress -ArgumentList @("/path:`"$sitePath`"", "/port:$port", "/systray:false") -WorkingDirectory $sitePath
 
-Write-Host "Started. Open: http://localhost:$port/"
+Write-Host "Started. Opening: http://localhost:$port/"
+
+# Open the default browser at the monitoring URL (best effort).
+Start-Sleep -Seconds 1
+try {
+  Start-Process "http://localhost:$port/"
+} catch {
+  Write-Host "Could not open browser automatically. Open manually: http://localhost:$port/"
+}

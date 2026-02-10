@@ -17,6 +17,7 @@ Monitoring URL: `http://localhost:8080/`
 - Δικαιώματα Administrator (θα πατήσεις “Yes” σε UAC)
 - Σύνδεση Internet (μόνο για να κατέβουν 2–3 installers + ROOT)
 - Συνδεδεμένο Hantek (σε θύρα USB του laptop)
+- Visual Studio Build Tools 2022 με C++ workload (Desktop development with C++)
 
 ---
 
@@ -34,7 +35,21 @@ Monitoring URL: `http://localhost:8080/`
 
 ---
 
-## 2) Αυτόματη εγκατάσταση dependencies (μία φορά – προτείνεται)
+## 2) Εγκατάσταση Visual Studio Build Tools 2022 (μία φορά – απαραίτητο)
+
+Αυτό είναι απαραίτητο για να δουλεύουν τα plots στο UI (το ROOT/Cling χρειάζεται MSVC headers/Windows SDK).
+
+1) Άνοιξε τον installer για Visual Studio Build Tools 2022
+2) Στο tab Workloads:
+   - επίλεξε ΜΟΝΟ: Desktop development with C++
+3) Στο tab Installation locations:
+   - βάλε Download cache σε fixed δίσκο, π.χ. >>> C:\VSCache
+   - (προαιρετικό) βγάλε το “Keep download cache after the installation” για να μη σου τρώει χώρο
+4) Πάτα Install και περίμενε να ολοκληρωθεί
+
+---
+
+## 3) Install dependencies (μία φορά – προτείνεται)
 
 Αυτό είναι το βήμα που αντικαθιστά τα “χειροκίνητα downloads / εγκαταστάσεις”.
 
@@ -45,12 +60,12 @@ Monitoring URL: `http://localhost:8080/`
 - **Microsoft Visual C++ Redistributable (x64)**
 - **IIS Express**
 - **ROOT** (είτε portable `.zip` είτε installer `.exe`, ανάλογα με το URL στο `config\station.json`)
-- **Visual Studio Build Tools (C++ toolchain + Windows SDK)** (απαραίτητο για να παράγονται τα plots από το ROOT σε Windows)
+- (έλεγχο) ότι υπάρχει C++ toolchain / Windows SDK ώστε να παράγονται τα ROOT plots σε Windows
 
 Σημείωση για ROOT: αν κατεβαίνει ως installer `.exe`, μπορεί να ανοίξει παράθυρο εγκατάστασης.  
 Απλά ακολούθησε τα default βήματα (Next/Install). Μετά το script θα προσπαθήσει να βρει το `root.exe`.
 
-### 2.1 Αν θες “offline” (χωρίς internet)
+### 3.1 Αν θες “offline” (χωρίς internet)
 
 Μπορείς να βάλεις installers/zip μέσα στο:
 
@@ -59,7 +74,7 @@ Monitoring URL: `http://localhost:8080/`
 και μετά να τρέξεις πάλι `Install-Dependencies.cmd`.  
 (Εναλλακτικά, βάλε `allowOnlineDownloads=false` στο `config\station.json`.)
 
-### 2.2 Αν προτιμάς “χειροκίνητα” (fallback)
+### 3.2 Αν προτιμάς “χειροκίνητα” (fallback)
 
 Αν δεν θες να τρέξεις το `Install-Dependencies.cmd`, τότε πρέπει να ισχύουν:
 
@@ -72,7 +87,7 @@ Monitoring URL: `http://localhost:8080/`
 
 ---
 
-## 3) One‑time setup του σταθμού (Admin)
+## 4) One‑time setup του σταθμού (Admin)
 
 Πήγαινε στο:
 
@@ -94,9 +109,17 @@ Monitoring URL: `http://localhost:8080/`
   - `D:\Save_Pulses_Showers_Rec_Phase2\`
 - Αντιγράφει τα προ‑compiled DAQ αρχεία μέσα στα `D:\Save_Pulses_*` (για να γράφει εκεί που περιμένει ο κώδικας)
 
+### 4.1 (Προαιρετικό αλλά προτείνεται) Φτιάξε “κουμπιά” στο Desktop
+
+Από `E:\mNetStationKit\scripts\`:
+
+- τρέξε `Create-Desktop-Shortcuts.cmd`
+
+Θα φτιάξει στο Desktop shortcuts που δουλεύουν ακόμα κι αν το USB αλλάξει drive letter (E:, F:, κτλ).
+
 ---
 
-## 4) Πριν πάρεις δεδομένα: βάλε σωστά τις συντεταγμένες
+## 5) Πριν πάρεις δεδομένα: βάλε σωστά τις συντεταγμένες
 
 Άνοιξε το αρχείο:
 
@@ -106,13 +129,17 @@ Monitoring URL: `http://localhost:8080/`
 
 ---
 
-## 5) Calibration (λήψη + plots)
+## 6) Calibration (λήψη + plots)
 
-### 5.1 Ξεκίνα το calibration DAQ
+### 6.1 Ξεκίνα το calibration DAQ
 
 Από `E:\mNetStationKit\scripts\`:
 
 - τρέξε `Start-DAQ-Calibration.cmd`
+
+Εναλλακτικά (αν έχεις φτιάξει shortcuts στο Desktop από το 4.1):
+
+- πάτα `mNetStationKit - Start DAQ Calibration`
 
 Έλεγχος ότι “γράφει”:
 
@@ -120,17 +147,21 @@ Monitoring URL: `http://localhost:8080/`
 - Πρέπει να εμφανίζονται αρχεία τύπου:
   - `detectorid_year_month_day_hour.data`
 
-### 5.2 Ξεκίνα το Monitoring UI
+### 6.2 Ξεκίνα το Monitoring UI
 
 Από `E:\mNetStationKit\scripts\`:
 
 - τρέξε `Start-Monitoring.cmd`
 
-Άνοιξε browser:
+Εναλλακτικά (αν έχεις φτιάξει shortcuts στο Desktop από το 4.1):
+
+- πάτα `mNetStationKit - Start Monitoring`
+
+Το script ανοίγει αυτόματα τον default browser στο:
 
 - `http://localhost:8080/`
 
-### 5.3 Στο UI (Calibration)
+### 6.3 Στο UI (Calibration)
 
 1. Επίλεξε **σταθμό 4** (είναι ο τοπικός).
 2. Πήγαινε tab **Calibration**.
@@ -145,15 +176,41 @@ Monitoring URL: `http://localhost:8080/`
   - **MIP mean peak 1, 2, 3** (μέσα ύψη παλμού για κάθε ανιχνευτή)
   - **Timing Offset 1, 2** (offset timings)
 
+### 6.4 Πού αποθηκεύονται τα αρχεία του Calibration (paths)
+
+Raw outputs (ανά session) γράφονται εδώ:
+
+- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
+  - `calibration_<SessionId>_<Station>_<YYYY_M_D_H_m_s>\`
+
+Στον παραπάνω φάκελο θα δεις συνήθως:
+
+- `outroot.jpg` (Detector Response)
+- `outroot2.jpg` (Synchronization)
+- `info_response.txt`, `info_timing.txt`
+- `timing.txt`
+- `test1.txt`, `test2.txt`, `test3.txt`
+- `pulse1.txt`, `pulse2.txt`, `pulse3.txt`
+
+Οι εικόνες που “σερβίρει” το site (δηλαδή αυτές που βλέπει ο browser) είναι εδώ:
+
+- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\images\`
+  - `outroot_<SessionId>.jpg`
+  - `outroot2_<SessionId>.jpg`
+
 ---
 
-## 6) Showers (λήψη + online monitoring)
+## 7) Showers (λήψη + online monitoring)
 
-### 6.1 Ξεκίνα το showers DAQ
+### 7.1 Ξεκίνα το showers DAQ
 
 Από `E:\mNetStationKit\scripts\`:
 
 - τρέξε `Start-DAQ-Showers.cmd`
+
+Εναλλακτικά (αν έχεις φτιάξει shortcuts στο Desktop από το 4.1):
+
+- πάτα `mNetStationKit - Start DAQ Showers`
 
 Έλεγχος ότι “γράφει”:
 
@@ -161,7 +218,7 @@ Monitoring URL: `http://localhost:8080/`
 - Πρέπει να εμφανίζονται αρχεία τύπου:
   - `detectorid_year_month_day_hour.showerdata`
 
-### 6.2 Στο UI (Online Monitoring)
+### 7.2 Στο UI (Online Monitoring)
 
 1. Άνοιξε `http://localhost:8080/` (αν δεν είναι ήδη ανοιχτό).
 2. Επίλεξε **σταθμό 4**.
@@ -171,6 +228,31 @@ Monitoring URL: `http://localhost:8080/`
    - Βάλε τα **MIP mean peak 1–3** (από το calibration)
    - Πάτα **START**
 
+### 7.3 Πού αποθηκεύονται τα αρχεία του Showers Monitoring (paths)
+
+Raw outputs (ανά session) γράφονται εδώ:
+
+- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
+  - `shower_<SessionId>_<Station>_<YYYY_M_D_H_m_s>\`
+
+Στον παραπάνω φάκελο θα δεις συνήθως:
+
+- `info_shower.txt` (οι παράμετροι που έβαλες + start time + station)
+- `events.txt`
+- `pulses1.jpg`
+- `plots.jpg`
+
+Οι εικόνες που “σερβίρει” το site (δηλαδή αυτές που βλέπει ο browser) είναι εδώ:
+
+- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\images\`
+  - `pulses_<SessionId>.jpg`
+  - `plots_<SessionId>.jpg`
+
+Reconstructed events μπορεί να γράφονται και στο:
+
+- `D:\Save_Pulses_Showers_Rec_Phase2\`
+  - `events_<Station>_<YYYY>_<M>_<D>_<H>*`
+
 ---
 
 ## Σημαντικές παρατηρήσεις / κοινά προβλήματα
@@ -179,13 +261,19 @@ Monitoring URL: `http://localhost:8080/`
 
 - Το “virtual D:” από `subst` μπορεί να χαθεί μετά από restart.
 - Αν συμβεί:
-  - τρέξε ξανά `Start-Monitoring.cmd` ή/και `Setup-Admin.cmd` (ως Admin).
+  - απλά πάτα `Start-Monitoring.cmd` ή `Start-DAQ-Calibration.cmd` ή `Start-DAQ-Showers.cmd` (τα scripts ξαναφτιάχνουν το D: όταν λείπει).
+  - έλεγξε ότι υπάρχουν οι φάκελοι:
+    - `D:\Save_Pulses_Calibration_Phase2\`
+    - `D:\Save_Pulses_Showers_Phase2\`
+    - `D:\Save_Pulses_Showers_Rec_Phase2\`
+  - αν το D: δεν εμφανιστεί/δεν φτιαχτούν οι φάκελοι, τρέξε `Setup-Admin.cmd` ως Admin και ξαναδοκίμασε.
 
 ### B) Μην τρέχει calibration και showers μαζί
 
 - Δεν πρέπει να τρέχουν ταυτόχρονα.
 - Αν ξεκινήσεις το ένα ενώ τρέχει το άλλο, κλείσε το άλλο πρώτα.
 - Για γρήγορο κλείσιμο: τρέξε `scripts/Stop-DAQ.cmd`.
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop DAQ`.
 
 ### C) Decimal separator (πολύ σημαντικό)
 
@@ -225,3 +313,8 @@ Monitoring URL: `http://localhost:8080/`
 
 - Τρέξε `scripts/Collect-Logs.cmd`
 - Θα φτιάξει ZIP μέσα στο `logs/` στο kit
+
+Χρήσιμες default τοποθεσίες για IIS Express logs (συνήθως):
+
+- `C:\Users\<USERNAME>\Documents\IISExpress\Logs\`
+- `C:\Users\<USERNAME>\Documents\IISExpress\config\`

@@ -89,17 +89,7 @@ function Test-VcRedistInstalled {
   return $false
 }
 
-function Find-VsBuildToolsInstaller {
-  $dir = Join-Path $kitRoot "deps/installers"
-  if (-not (Test-Path $dir)) { return $null }
-
-  return (Get-ChildItem -Path $dir -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -match "(?i)vs.*buildtools.*\\.exe$" } |
-    Sort-Object -Property LastWriteTime -Descending |
-    Select-Object -First 1)
-}
-
-function Ensure-VsBuildToolsCpp {
+function Ensure-CppToolchainReady {
   if (Test-CppToolchainAvailable) {
     Write-Host "C++ toolchain already available (cl.exe found)."
     return
@@ -116,41 +106,14 @@ function Ensure-VsBuildToolsCpp {
     }
   }
 
-  Write-Host "C++ Build Tools not found; installing Visual Studio Build Tools (C++ workload)..."
+  throw @"
+C++ Build Tools / Windows SDK not found (cl.exe not available).
 
-  $installer = Find-VsBuildToolsInstaller
-  if (-not $installer) {
-    $dl = Get-Downloads
-    $url = $null
-    if ($dl -and $dl.vsBuildToolsUrl) { $url = $dl.vsBuildToolsUrl }
-    if (-not $url) {
-      throw "Missing downloads.vsBuildToolsUrl in config/station.json (needed to auto-install C++ Build Tools)."
-    }
-    $out = Get-DownloadCachePath -Url $url
-    Download-File -Url $url -OutFile $out
-    $installer = Get-Item $out
-  }
+Install "Visual Studio Build Tools 2022" and select:
+  - Desktop development with C++
 
-  # Install minimal C++ build tools. This can take several GB and several minutes.
-  $args = @(
-    "--quiet",
-    "--wait",
-    "--norestart",
-    "--nocache",
-    "--add", "Microsoft.VisualStudio.Workload.VCTools",
-    "--includeRecommended"
-  )
-
-  Write-Host "Running Build Tools installer (this may take a while)..."
-  Start-Process -FilePath $installer.FullName -ArgumentList $args -Wait
-
-  # Best effort: load env and verify cl.exe.
-  $null = Import-VsDevCmdEnv
-  if (-not (Test-CppToolchainAvailable)) {
-    throw "Build Tools install finished, but cl.exe is still not available. Try rebooting, then rerun Install-Dependencies."
-  }
-
-  Write-Host "C++ toolchain installed and available (cl.exe found)."
+Then rerun: scripts\Install-Dependencies.cmd
+"@
 }
 
 function Ensure-RootFromZip {
@@ -222,6 +185,10 @@ function Ensure-IisExpressPortableFromZip {
 
 Write-Host "Kit: $kitRoot"
 
+# C++ Build Tools / Windows SDK (needed by ROOT/Cling to compile macros on Windows).
+# We require the user to install VS Build Tools explicitly (no auto-install from this script).
+Ensure-CppToolchainReady
+
 # IIS Express (optional if already installed)
 try {
   $iis = Get-IisExpressExe -Config $cfg
@@ -281,9 +248,6 @@ if (Test-VcRedistInstalled) {
     Install-ExeQuiet -Path $out -Args @("/install", "/quiet", "/norestart")
   }
 }
-
-# C++ Build Tools / Windows SDK (needed by ROOT/Cling to compile macros on Windows)
-Ensure-VsBuildToolsCpp
 
 # ROOT (portable zip -> deps/root)
 try {
