@@ -6,25 +6,46 @@ function Get-MNetKitRoot {
 }
 
 function Find-VsDevCmdBat {
-  $pf86 = ${env:ProgramFiles(x86)}
-  if (-not $pf86 -or $pf86.Trim() -eq "") { $pf86 = $env:ProgramFiles }
-  if (-not $pf86 -or $pf86.Trim() -eq "") { return $null }
+  $bases = @()
+  if ($env:ProgramFiles) { $bases += $env:ProgramFiles }
+  if (${env:ProgramFiles(x86)}) { $bases += ${env:ProgramFiles(x86)} }
+  $bases = $bases | Where-Object { $_ -and $_.Trim() -ne "" } | Select-Object -Unique
 
-  $roots = @(
-    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\BuildTools"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\Community"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\Professional"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2022\\Enterprise"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\BuildTools"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\Community"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\Professional"),
-    (Join-Path $pf86 "Microsoft Visual Studio\\2019\\Enterprise")
-  ) | Where-Object { $_ -and (Test-Path $_) }
+  # Try vswhere first (most reliable).
+  foreach ($b in $bases) {
+    $vswhere = Join-Path $b "Microsoft Visual Studio\\Installer\\vswhere.exe"
+    if (-not (Test-Path $vswhere)) { continue }
+    try {
+      $installPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+      if ($installPath -and (Test-Path $installPath)) {
+        $cand = Join-Path $installPath "Common7\\Tools\\VsDevCmd.bat"
+        if (Test-Path $cand) { return $cand }
+      }
+    } catch {
+      # ignore and fall back
+    }
+  }
 
-  foreach ($r in $roots) {
+  # Fallback: probe common install roots (VS 2022 is usually under Program Files, not x86).
+  $roots = @()
+  foreach ($b in $bases) {
+    $roots += @(
+      (Join-Path $b "Microsoft Visual Studio\\2022\\BuildTools"),
+      (Join-Path $b "Microsoft Visual Studio\\2022\\Community"),
+      (Join-Path $b "Microsoft Visual Studio\\2022\\Professional"),
+      (Join-Path $b "Microsoft Visual Studio\\2022\\Enterprise"),
+      (Join-Path $b "Microsoft Visual Studio\\2019\\BuildTools"),
+      (Join-Path $b "Microsoft Visual Studio\\2019\\Community"),
+      (Join-Path $b "Microsoft Visual Studio\\2019\\Professional"),
+      (Join-Path $b "Microsoft Visual Studio\\2019\\Enterprise")
+    )
+  }
+
+  foreach ($r in ($roots | Where-Object { $_ -and (Test-Path $_) })) {
     $cand = Join-Path $r "Common7\\Tools\\VsDevCmd.bat"
     if (Test-Path $cand) { return $cand }
   }
+
   return $null
 }
 
