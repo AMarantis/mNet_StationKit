@@ -99,10 +99,10 @@ Monitoring URL: `http://localhost:8080/`
 
 Αυτό κάνει:
 
-- Φτιάχνει local cache: `C:\mNetSpool` (περίπου 1–2GB χώρος είναι αρκετός)
+- Φτιάχνει spool folder **στο USB** (μέσα στο kit): `E:\mNetStationKit\mNetSpool\`
 - Εξασφαλίζει ότι υπάρχει `D:` για τα data paths:
   - Αν υπάρχει ήδη πραγματικό `D:` (π.χ. “Virtual_D”), το χρησιμοποιεί.
-  - Αλλιώς δημιουργεί “virtual D:” με `subst` που δείχνει στο `C:\mNetSpool`.
+  - Αλλιώς δημιουργεί “virtual D:” με `subst` που δείχνει στο USB spool folder (π.χ. `E:\mNetStationKit\mNetSpool\`).
 - Φτιάχνει τους φακέλους δεδομένων:
   - `D:\Save_Pulses_Calibration_Phase2\`
   - `D:\Save_Pulses_Showers_Phase2\`

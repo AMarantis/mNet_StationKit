@@ -2,7 +2,7 @@
   "usbVolumeLabel": "mNetStation",
   "kitFolderName": "mNetStationKit",
   "monitoringPort": 8080,
-  "spoolPath": "C:\\mNetSpool",
+  "spoolPath": "mNetSpool",
   "virtualDataDriveLetter": "D",
   "rootRelativeExePath": "deps\\root\\bin\\root.exe",
   "iisExpressRelativeExePath": "deps\\iisexpress\\iisexpress.exe",

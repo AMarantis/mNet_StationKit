@@ -94,7 +94,23 @@ function Get-MNetConfig {
   if (-not (Test-Path $cfgPath)) {
     throw "Missing config file: $cfgPath"
   }
-  return (Get-Content $cfgPath -Raw | ConvertFrom-Json)
+
+  $cfg = (Get-Content $cfgPath -Raw | ConvertFrom-Json)
+
+  # Resolve spoolPath:
+  # - If it's a relative path, it is interpreted as relative to the kit root (USB folder).
+  # - If it's absolute, use it as-is.
+  $spool = ""
+  try { $spool = [string]$cfg.spoolPath } catch {}
+  if (-not $spool -or $spool.Trim() -eq "") {
+    $spool = "mNetSpool"
+    try { $cfg.spoolPath = $spool } catch {}
+  }
+  if (-not [System.IO.Path]::IsPathRooted($spool)) {
+    try { $cfg.spoolPath = (Join-Path $kitRoot $spool) } catch {}
+  }
+
+  return $cfg
 }
 
 function Get-MNetDriveRootFromPath {

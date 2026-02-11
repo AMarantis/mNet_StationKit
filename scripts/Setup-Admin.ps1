@@ -12,7 +12,7 @@ if (-not (Test-Path $kitRoot)) { throw "Kit folder not found at '$kitRoot'." }
 $spool = $cfg.spoolPath
 Ensure-Directory -Path $spool
 
-# Create virtual data drive (D:) pointing to C:\mNetSpool
+# Create virtual data drive (D:) pointing to the configured spool folder (default: <kit>\mNetSpool on the USB)
 $driveLetter = $cfg.virtualDataDriveLetter
 Ensure-SubstDrive -DriveLetter $driveLetter -TargetPath $spool
 

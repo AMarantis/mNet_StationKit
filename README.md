@@ -86,8 +86,8 @@ You can also edit `config/station.json` → `downloads.*` URLs to match your env
 The existing monitoring code expects `D:\Save_Pulses_*`.
 
 - If the station already has a real `D:` (e.g. “Virtual_D”), the kit uses it.
-- Otherwise it creates a virtual `D:` mapping to a small local cache:
-  - `C:\mNetSpool`
+- Otherwise it creates a virtual `D:` mapping to the configured spool folder:
+  - By default: `<kit>\mNetSpool` (i.e. alongside the kit folder on the USB)
 
 Expected folders:
 
