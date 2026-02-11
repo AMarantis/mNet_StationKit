@@ -3,10 +3,7 @@
 Write-Host "Stopping DAQ (VCDSO.exe) if running..."
 
 $procs = Get-Process -Name "VCDSO" -ErrorAction SilentlyContinue
-if (-not $procs) {
-  Write-Host "No VCDSO process found."
-  exit 0
-}
+if (-not $procs) { Write-Host "No VCDSO process found." }
 
 $procs | ForEach-Object {
   try {
@@ -17,5 +14,17 @@ $procs | ForEach-Object {
   }
 }
 
-Write-Host "Done."
+try {
+  $kitRoot = Get-MNetKitRoot
+  $pidPath = Join-Path (Join-Path $kitRoot "logs") "restart_daq_watchdog.pid"
+  if (Test-Path $pidPath) {
+    $pid = (Get-Content $pidPath -Raw).Trim()
+    if ($pid -match "^[0-9]+$") {
+      Write-Host "Stopping DAQ watchdog (PID $pid)..."
+      Stop-Process -Id ([int]$pid) -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item -Path $pidPath -Force -ErrorAction SilentlyContinue
+  }
+} catch {}
 
+Write-Host "Done."
