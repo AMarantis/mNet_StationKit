@@ -212,6 +212,32 @@ Raw outputs (ανά session) γράφονται εδώ:
   - `outroot_<SessionId>.jpg`
   - `outroot2_<SessionId>.jpg`
 
+### 6.5 Πριν πας σε Showers: σταμάτα το Calibration
+
+Πριν ξεκινήσεις showers, **πρέπει** να έχει σταματήσει το calibration (δεν πρέπει να τρέχουν μαζί).
+
+Σημείωση (σημαντικό για αργότερα):
+
+- Κράτα κάπου (π.χ. σε σημείωση / screenshot) τις τιμές:
+  - **Timing Offset 1 & 2**
+  - **MIP mean peak 1–3**
+- Θα τις χρειαστείς στο **Online Monitoring → Telescope Parameters** στο βήμα **7.2**.
+- Αν αλλάξεις tab / κάνεις refresh, είναι πιθανό τα plots του Calibration να “χαθούν” από το UI.
+  - Μπορείς να τα ξαναβρείς από τις εικόνες που παράγονται:
+    - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\images\outroot_<SessionId>.jpg` (όπου `X:` είναι το USB drive, π.χ. `D:`)
+    - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\images\outroot2_<SessionId>.jpg` (όπου `X:` είναι το USB drive, π.χ. `D:`)
+
+1) Στο UI (Calibration):
+- Πάτα **STOP** στο sub‑tab **Detector Response** (αν τρέχει).
+- Πάτα **STOP** στο sub‑tab **Synchronization** (αν τρέχει).
+
+2) Σταμάτα το DAQ process:
+- Τρέξε `scripts/Stop-DAQ.cmd`
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop DAQ`
+
+Σημείωση:
+- Δεν χρειάζεται να κλείσεις τον browser. Απλά μετά πήγαινε tab **Online Monitoring** για το showers.
+
 ---
 
 ## 7) Showers (λήψη + online monitoring)
@@ -267,6 +293,32 @@ Reconstructed events μπορεί να γράφονται και στο:
 - `D:\Save_Pulses_Showers_Rec_Phase2\`
   - `events_<Station>_<YYYY>_<M>_<D>_<H>*`
 
+### 7.4 Πώς σταματάς τα showers και πώς “κλείνεις” το UI
+
+Όταν τελειώσεις το showers run:
+
+1) Στο UI:
+- Στο tab **Online Monitoring** → sub‑tab **Telescope Parameters**:
+  - Πάτα **STOP**
+  - Περίμενε να εμφανιστεί pop‑up:
+    - `Acquisition stopped. To resume, press start.`
+  - Πάτα **OK**
+
+Σημείωση:
+- Το **STOP** στο UI σταματάει το *online monitoring acquisition/plots* (δηλαδή το διάβασμα/ενημέρωση στο site).
+- Για να σταματήσει και η **λήψη δεδομένων**, πρέπει να σταματήσεις και το DAQ (`VCDSO.exe`), όπως στο επόμενο βήμα.
+
+2) Σταμάτα το DAQ:
+- Τρέξε `scripts/Stop-DAQ.cmd`
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop DAQ`
+
+3) Κλείσε το Monitoring UI (IIS Express):
+- Τρέξε `scripts/Stop-Monitoring.cmd`
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop Monitoring`
+
+4) Κλείσε τον browser (προαιρετικό):
+- Κλείσε απλά το tab/παράθυρο.
+
 ---
 
 ## Σημαντικές παρατηρήσεις / κοινά προβλήματα
@@ -301,9 +353,15 @@ Reconstructed events μπορεί να γράφονται και στο:
 
 ### D) Hantek latency / restart κάθε ~1 ώρα
 
-Αν μετά από ώρα αρχίζει latency:
+Το kit έχει watchdog που κάνει **αυτόματο restart** του DAQ (`VCDSO.exe`) περίπου κάθε ~1 ώρα (όσο γράφονται δεδομένα), ώστε να αποφεύγεται το “μπούκωμα”/latency.
 
-- Κλείσε και ξανάνοιξε το DAQ:
+Σημειώσεις:
+- Αυτό δουλεύει **μόνο** αν ξεκινάς το DAQ με τα scripts/shortcuts του kit (`Start-DAQ-Calibration` / `Start-DAQ-Showers`). Αν τρέξεις `VCDSO.exe` “με το χέρι”, δεν ξεκινά watchdog.
+- Για λεπτομέρειες/λογική/ασφάλειες δες: `WATCHDOG_DAQ_RESTART_GR.md`.
+
+Αν παρ’ όλα αυτά δεις latency και θες να ελέγξεις τι έγινε:
+- Άνοιξε το log: `logs\restart_daq_watchdog.log`
+- (fallback) κάνε manual restart:
   - `scripts/Stop-DAQ.cmd`
   - μετά `Start-DAQ-Calibration.cmd` ή `Start-DAQ-Showers.cmd`
 

@@ -1,5 +1,3 @@
-$ErrorActionPreference = "Stop"
-
 param(
   [Parameter(Mandatory = $true)][string]$ExePath,
   [Parameter(Mandatory = $true)][string]$WorkingDirectory,
@@ -12,6 +10,8 @@ param(
   [int]$PollSeconds = 60,
   [int]$MutexWaitSeconds = 60
 )
+
+$ErrorActionPreference = "Stop"
 
 . "$PSScriptRoot/_mnet_common.ps1"
 
@@ -64,7 +64,7 @@ $script:LogPath = Join-Path $logsDir "restart_daq_watchdog.log"
 $pidPath = Join-Path $logsDir "restart_daq_watchdog.pid"
 $statePath = Join-Path $logsDir "restart_daq_watchdog_state.json"
 
-$mutexName = "Local\\mNetStationKit_RestartDAQ_Watchdog"
+$mutexName = "Local\mNetStationKit_RestartDAQ_Watchdog"
 $mutex = $null
 $hasMutex = $false
 
