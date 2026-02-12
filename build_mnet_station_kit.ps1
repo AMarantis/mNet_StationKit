@@ -24,7 +24,6 @@ function Assert-Command {
 
 $repoRoot = Split-Path -Parent $PSCommandPath
 $zipPath = Join-Path $repoRoot "mNetStationKit.zip"
-$zipPrefix = "mNetStationKit/"
 
 Write-Host "Repo: $repoRoot"
 
@@ -37,7 +36,7 @@ if (-not (Test-Path (Join-Path $repoRoot ".git"))) {
 Remove-IfExists -Path $zipPath
 
 Write-Host "Creating archive: $zipPath"
-& git -C $repoRoot archive --worktree-attributes --format=zip --prefix=$zipPrefix --output $zipPath HEAD
+& git -C $repoRoot archive --worktree-attributes --format=zip --output $zipPath HEAD
 
 Write-Host ""
 Write-Host "Done."

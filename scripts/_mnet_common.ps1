@@ -100,14 +100,28 @@ function Get-MNetConfig {
   # Resolve spoolPath:
   # - If it's a relative path, it is interpreted as relative to the kit root (USB folder).
   # - If it's absolute, use it as-is.
+  #
+  # Special case:
+  # - If the configured virtual data drive already exists as a real drive (e.g. the USB is D:),
+  #   do not create an (unused) kit-local spool folder. We'll just use the existing drive as the spool root.
   $spool = ""
   try { $spool = [string]$cfg.spoolPath } catch {}
   if (-not $spool -or $spool.Trim() -eq "") {
     $spool = "mNetSpool"
     try { $cfg.spoolPath = $spool } catch {}
   }
+
+  $driveLetter = ""
+  try { $driveLetter = [string]$cfg.virtualDataDriveLetter } catch {}
+  if (-not $driveLetter -or $driveLetter.Trim() -eq "") { $driveLetter = "D" }
+  $dataDrive = "$driveLetter`:\"
+
   if (-not [System.IO.Path]::IsPathRooted($spool)) {
-    try { $cfg.spoolPath = (Join-Path $kitRoot $spool) } catch {}
+    if (Test-Path $dataDrive) {
+      try { $cfg.spoolPath = $dataDrive } catch {}
+    } else {
+      try { $cfg.spoolPath = (Join-Path $kitRoot $spool) } catch {}
+    }
   }
 
   return $cfg

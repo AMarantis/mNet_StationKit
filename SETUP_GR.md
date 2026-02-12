@@ -1,12 +1,19 @@
 # Οδηγίες χρήσης mNetStationKit (Windows 11 – για μη τεχνικούς χρήστες)
 
-Στόχος: να τρέξει ο σταθμός μNet **όπως τρέχει σήμερα**, αλλά χωρίς τα χειροκίνητα βήματα:
-- CMake / Python / Visual Studio
-- ρυθμίσεις Windows IIS / publish σε `C:\inetpub\wwwroot`
+Στόχος: να εγκαταστήσεις και να εκκινήσεις τον σταθμό μNet (DAQ + Monitoring) **από USB**, ώστε να πάρεις δεδομένα:
+
+- **Calibration** (για τα Timing Offsets / MIP peaks)
+- και μετά **Showers** (online monitoring)
 
 Το kit τρέχει το monitoring με **IIS Express** και χρησιμοποιεί **ROOT** για τα διαγράμματα.
 
 Monitoring URL: `http://localhost:8080/`
+
+Σημείωση για paths (πολύ σημαντικό):
+
+- Το γράμμα του USB stick **διαφέρει** από υπολογιστή σε υπολογιστή (π.χ. `D:`, `E:`, `F:`…).
+- Στον οδηγό γράφουμε το USB σαν **`X:`**.
+  - Π.χ. `X:\mNetStationKit\scripts\` σημαίνει “στο USB σου, μέσα στον φάκελο `mNetStationKit`, στο `scripts`”.
 
 ---
 
@@ -26,12 +33,18 @@ Monitoring URL: `http://localhost:8080/`
 1. Κατέβασε από το GitHub το folder `mNetStationKit` (ZIP download είναι ΟΚ).
 2. Κάνε extract **στο root** του USB, ώστε να υπάρχει:
 
-- `E:\mNetStationKit\`
-- `E:\mNetStationKit\scripts\`
-- `E:\mNetStationKit\payload\`
-- `E:\mNetStationKit\deps\`
+- `X:\mNetStationKit\config\`
+- `X:\mNetStationKit\scripts\`
+- `X:\mNetStationKit\payload\`
+- `X:\mNetStationKit\deps\`
 
-Σημείωση: Αν το USB δεν είναι `E:`, δεν πειράζει. Τα scripts τρέχουν από το folder που κάνεις click.
+Σημείωση:
+
+- Δεν θέλουμε να καταλήξεις σε **διπλό folder**, π.χ. `X:\mNetStationKit\mNetStationKit\...`
+  - Αν συμβεί, είτε:
+    - κάνε extract ξανά στο **root** του USB, ή
+    - μετέφερε τον “εσωτερικό” φάκελο `mNetStationKit` ένα επίπεδο πάνω.
+- Σε κάθε περίπτωση, στο τέλος πρέπει να έχεις **ακριβώς** έναν φάκελο `X:\mNetStationKit\` που μέσα του έχει τους επιμέρους φακέλους `config/`, `deps/`, `payload/`, `scripts/`.
 
 ---
 
@@ -57,7 +70,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Αυτό είναι το βήμα που αντικαθιστά τα “χειροκίνητα downloads / εγκαταστάσεις”.
 
-1) Πήγαινε: `E:\mNetStationKit\scripts\`
+1) Πήγαινε: `X:\mNetStationKit\scripts\`
 2) Δεξί κλικ `Install-Dependencies.cmd` → **Run as administrator**
 
 Το script ελέγχει και (αν λείπουν) κατεβάζει/εγκαθιστά:
@@ -73,7 +86,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Μπορείς να βάλεις installers/zip μέσα στο:
 
-- `E:\mNetStationKit\deps\installers\`
+- `X:\mNetStationKit\deps\installers\`
 
 και μετά να τρέξεις πάλι `Install-Dependencies.cmd`.  
 (Εναλλακτικά, βάλε `allowOnlineDownloads=false` στο `config\station.json`.)
@@ -86,7 +99,7 @@ Monitoring URL: `http://localhost:8080/`
   - `C:\Program Files\IIS Express\iisexpress.exe`
 - VC++ redist installed (x64)
 - ROOT διαθέσιμο με έναν από τους δύο τρόπους:
-  - Portable: `E:\mNetStationKit\deps\root\bin\root.exe`
+  - Portable: `X:\mNetStationKit\deps\root\bin\root.exe`
   - Ή system install: κάπου σε `C:\root_v*\bin\root.exe`
 
 ---
@@ -95,7 +108,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Πήγαινε στο:
 
-- `E:\mNetStationKit\scripts\`
+- `X:\mNetStationKit\scripts\`
 
 και κάνε:
 
@@ -103,10 +116,11 @@ Monitoring URL: `http://localhost:8080/`
 
 Αυτό κάνει:
 
-- Φτιάχνει spool folder **στο USB** (μέσα στο kit): `E:\mNetStationKit\mNetSpool\`
+- Αν **δεν** υπάρχει πραγματικό `D:`, φτιάχνει spool folder **στο USB** (μέσα στο kit): `X:\mNetStationKit\mNetSpool\`
 - Εξασφαλίζει ότι υπάρχει `D:` για τα data paths:
+  - Στον οδηγό, το `D:` είναι το “data drive” που περιμένει ο DAQ κώδικας (μπορεί να είναι πραγματικός δίσκος ή virtual drive μέσω `subst`).
   - Αν υπάρχει ήδη πραγματικό `D:` (π.χ. “Virtual_D”), το χρησιμοποιεί.
-  - Αλλιώς δημιουργεί “virtual D:” με `subst` που δείχνει στο USB spool folder (π.χ. `E:\mNetStationKit\mNetSpool\`).
+  - Αλλιώς δημιουργεί “virtual D:” με `subst` που δείχνει στο USB spool folder (π.χ. `X:\mNetStationKit\mNetSpool\`).
 - Φτιάχνει τους φακέλους δεδομένων:
   - `D:\Save_Pulses_Calibration_Phase2\`
   - `D:\Save_Pulses_Showers_Phase2\`
@@ -115,11 +129,11 @@ Monitoring URL: `http://localhost:8080/`
 
 ### 4.1 (Προαιρετικό αλλά προτείνεται) Φτιάξε “κουμπιά” στο Desktop
 
-Από `E:\mNetStationKit\scripts\`:
+Από `X:\mNetStationKit\scripts\`:
 
 - τρέξε `Create-Desktop-Shortcuts.cmd`
 
-Θα φτιάξει στο Desktop shortcuts που δουλεύουν ακόμα κι αν το USB αλλάξει drive letter (E:, F:, κτλ).
+Θα φτιάξει στο Desktop shortcuts που δουλεύουν ακόμα κι αν το USB αλλάξει drive letter (D:, E:, F:, κτλ).
 
 ---
 
@@ -127,7 +141,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Άνοιξε το αρχείο:
 
-- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\ProgramFiles\positions.txt`
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\ProgramFiles\positions.txt`
 
 και σιγουρέψου ότι έχει τις σωστές συντεταγμένες για τους 3 ανιχνευτές του σταθμού.
 
@@ -137,7 +151,7 @@ Monitoring URL: `http://localhost:8080/`
 
 ### 6.1 Ξεκίνα το calibration DAQ
 
-Από `E:\mNetStationKit\scripts\`:
+Από `X:\mNetStationKit\scripts\`:
 
 - τρέξε `Start-DAQ-Calibration.cmd`
 
@@ -153,7 +167,7 @@ Monitoring URL: `http://localhost:8080/`
 
 ### 6.2 Ξεκίνα το Monitoring UI
 
-Από `E:\mNetStationKit\scripts\`:
+Από `X:\mNetStationKit\scripts\`:
 
 - τρέξε `Start-Monitoring.cmd`
 
@@ -185,7 +199,7 @@ Monitoring URL: `http://localhost:8080/`
 Αποτελέσματα που θα δεις:
 
 - Δημιουργείται φάκελος κάτω από:
-  - `E:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\calibration_key_detectorid_year_month_day_hour_minutes_seconds`
+  - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\calibration_key_detectorid_year_month_day_hour_minutes_seconds`
 - Από τα plots (και τα αρχεία εικόνας που παράγονται) παίρνεις:
   - **MIP mean peak 1, 2, 3** (μέσα ύψη παλμού για κάθε ανιχνευτή)
   - **Timing Offset 1, 2** (offset timings)
@@ -194,7 +208,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Raw outputs (ανά session) γράφονται εδώ:
 
-- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
   - `calibration_<SessionId>_<Station>_<YYYY_M_D_H_m_s>\`
 
 Στον παραπάνω φάκελο θα δεις συνήθως:
@@ -208,7 +222,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Οι εικόνες που “σερβίρει” το site (δηλαδή αυτές που βλέπει ο browser) είναι εδώ:
 
-- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\images\`
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\images\`
   - `outroot_<SessionId>.jpg`
   - `outroot2_<SessionId>.jpg`
 
@@ -244,7 +258,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 ### 7.1 Ξεκίνα το showers DAQ
 
-Από `E:\mNetStationKit\scripts\`:
+Από `X:\mNetStationKit\scripts\`:
 
 - τρέξε `Start-DAQ-Showers.cmd`
 
@@ -272,7 +286,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Raw outputs (ανά session) γράφονται εδώ:
 
-- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
   - `shower_<SessionId>_<Station>_<YYYY_M_D_H_m_s>\`
 
 Στον παραπάνω φάκελο θα δεις συνήθως:
@@ -284,7 +298,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Οι εικόνες που “σερβίρει” το site (δηλαδή αυτές που βλέπει ο browser) είναι εδώ:
 
-- `E:\mNetStationKit\payload\single_stationOnline_Monitoring\images\`
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\images\`
   - `pulses_<SessionId>.jpg`
   - `plots_<SessionId>.jpg`
 
@@ -370,12 +384,12 @@ Reconstructed events μπορεί να γράφονται και στο:
 Αν στο `http://localhost:8080/` δεις μήνυμα τύπου “Could not find … `bin\roslyn\csc.exe`”, τότε:
 
 1) Έλεγξε ότι υπάρχει ο φάκελος:
-   - `E:\mNetStationKit\payload\single_stationOnline_Monitoring\bin\roslyn\`
+   - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\bin\roslyn\`
    και μέσα υπάρχουν `csc.exe`, `VBCSCompiler.exe`, `vbc.exe`.
 2) Αν “εξαφανίστηκαν”, συνήθως τα έβγαλε το Windows Security/Defender:
    - Windows Security → Virus & threat protection → Protection history → Restore/Allow
    - (προαιρετικά) πρόσθεσε Exclusion για:
-     - `E:\mNetStationKit\payload\single_stationOnline_Monitoring\bin\roslyn`
+     - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\bin\roslyn`
 
 ---
 

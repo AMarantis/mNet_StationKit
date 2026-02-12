@@ -12,7 +12,7 @@ rm -f "${zip_path}"
 
 command -v git >/dev/null 2>&1 || { echo "Missing required command: git" >&2; exit 1; }
 
-git -C "${repo_root}" archive --worktree-attributes --format=zip --prefix="${kit_name}/" --output "${zip_path}" HEAD
+git -C "${repo_root}" archive --worktree-attributes --format=zip --output "${zip_path}" HEAD
 
 echo "Done."
 echo "Next:"
