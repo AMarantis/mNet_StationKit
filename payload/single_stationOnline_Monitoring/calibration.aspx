@@ -89,7 +89,7 @@
               <a runat="server"  href="#tab0da5" onserverclick="Tab_Response_Click"  class="active u-active-white u-button-style u-hover-palette-5-light-1 u-palette-5-dark-1 u-tab-link-1" id="linktab0da5" role="tab" aria-controls="tab0da5" aria-selected="false">Detector Response</a>
             </li>
             <li class="u-tab-item" role="presentation">
-              <a  runat="server"   href="#tab14b7" onserverclick="Tab_Sync_Click"    class="u-active-white u-button-style u-hover-palette-5-light-1 u-palette-5-dark-1 u-tab-link-2" id="linktab14b7" role="tab" aria-controls="tab14b7" aria-selected="true"> Syncrhonization</a>
+              <a  runat="server"   href="#tab14b7" onserverclick="Tab_Sync_Click"    class="u-active-white u-button-style u-hover-palette-5-light-1 u-palette-5-dark-1 u-tab-link-2" id="linktab14b7" role="tab" aria-controls="tab14b7" aria-selected="true"> Synchronization</a>
             </li>
           </ul>
           <div class="u-tab-content">
