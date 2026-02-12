@@ -14,3 +14,11 @@ payload/single_stationOnline_Monitoring/ProgramFiles/*.cmd text eol=crlf
 
 # Keep the main WebForms project file consistent on Windows
 payload/single_stationOnline_Monitoring/WebApplication2.csproj text eol=crlf
+
+# Exclude helper / build artifacts from exported station kit archives (git archive)
+.gitignore export-ignore
+.gitattributes export-ignore
+build_mnet_station_kit.sh export-ignore
+build_mnet_station_kit.ps1 export-ignore
+build_mnet_station_kit.cmd export-ignore
+mNetStationKit.zip export-ignore

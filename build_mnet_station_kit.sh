@@ -2,32 +2,19 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-dist_root="${repo_root}/dist"
 kit_name="mNetStationKit"
-out_dir="${dist_root}/${kit_name}"
+zip_path="${repo_root}/${kit_name}.zip"
 
-rm -rf "${out_dir}"
-mkdir -p "${out_dir}"
+echo "Repo: ${repo_root}"
+echo "Creating archive: ${zip_path}"
 
-echo "Packaging kit at: ${out_dir}"
+rm -f "${zip_path}"
 
-# Copy the repo contents into dist/, honoring .gitignore to avoid runtime output and large deps.
-# Notes:
-# - This repo is already structured as the kit root (config/, scripts/, payload/, deps/).
-# - We exclude .git and dist itself to avoid recursion.
-rsync -a --delete \
-  --filter=':- .gitignore' \
-  --exclude '.git/' \
-  --exclude 'dist/' \
-  --exclude '.gitattributes' \
-  --exclude '.gitignore' \
-  --exclude 'build_mnet_station_kit.sh' \
-  --exclude 'build_mnet_station_kit.ps1' \
-  --exclude 'build_mnet_station_kit.cmd' \
-  "${repo_root}/" "${out_dir}/"
+command -v git >/dev/null 2>&1 || { echo "Missing required command: git" >&2; exit 1; }
+
+git -C "${repo_root}" archive --worktree-attributes --format=zip --prefix="${kit_name}/" --output "${zip_path}" HEAD
 
 echo "Done."
 echo "Next:"
-echo "  - Copy '${out_dir}' to the USB stick root."
-echo "  - Add portable ROOT at '${out_dir}/deps/root' (must contain bin/root.exe)."
-echo "  - Provide IIS Express at '${out_dir}/deps/iisexpress/iisexpress.exe' or install it on the station."
+echo "  - Copy '${zip_path}' to the station USB stick root."
+echo "  - Extract it so you get a folder like X:\\${kit_name}\\ (where X: is the USB drive letter)."
