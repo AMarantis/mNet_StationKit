@@ -39,11 +39,15 @@ Monitoring URL: `http://localhost:8080/`
 
 Αυτό είναι απαραίτητο για να δουλεύουν τα plots στο UI (το ROOT/Cling χρειάζεται MSVC headers/Windows SDK).
 
-1) Άνοιξε τον installer για Visual Studio Build Tools 2022
+1) Κατέβασε τον installer `vs_BuildTools.exe` από το επίσημο link:
+
+- `https://aka.ms/vs/17/release/vs_BuildTools.exe`
+
+2) Τρέξε το `vs_BuildTools.exe` (αν σε ρωτήσει UAC πάτα **Yes**).
 2) Στο tab Workloads:
    - επίλεξε ΜΟΝΟ: Desktop development with C++
 3) Στο tab Installation locations:
-   - βάλε Download cache σε fixed δίσκο, π.χ. >>> C:\VSCache
+   - βάλε Download cache σε fixed δίσκο (στον `C:`), π.χ. `C:\VSCache`
    - (προαιρετικό) βγάλε το “Keep download cache after the installation” για να μη σου τρώει χώρο
 4) Πάτα Install και περίμενε να ολοκληρωθεί
 
@@ -161,12 +165,22 @@ Monitoring URL: `http://localhost:8080/`
 
 - `http://localhost:8080/`
 
+Σημείωση:
+- Μερικές φορές στην **πρώτη** εκκίνηση μπορεί να ανοίξει ο browser αλλά η σελίδα να “φορτώνει” χωρίς να δείχνει UI.
+  - Περίμενε ~10–30 δευτερόλεπτα και πάτα `Reload` (`Ctrl+R`).
+
 ### 6.3 Στο UI (Calibration)
 
 1. Επίλεξε **σταθμό 4** (είναι ο τοπικός).
 2. Πήγαινε tab **Calibration**.
 3. Sub‑tab **Detector Response** → πάτα **START**.
+   - Περίμενε να εμφανιστεί pop‑up:
+     - `Response: Acquisition starting.`
+   - Πάτα **OK**.
 4. Sub‑tab **Synchronization** → πάτα **START**.
+   - Περίμενε να εμφανιστεί pop‑up:
+     - `Synchronization: Acquisition starting.`
+   - Πάτα **OK**.
 
 Αποτελέσματα που θα δεις:
 
