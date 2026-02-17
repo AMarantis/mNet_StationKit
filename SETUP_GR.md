@@ -9,6 +9,11 @@
 
 Monitoring URL: `http://localhost:8080/`
 
+Σημαντικό:
+
+- Για να εγκαταστήσεις/τρέξεις το kit στον σταθμό **δεν** χρειάζεται να κατεβάσεις “όλο το repo”, ούτε να έχεις Git/GitHub Desktop.
+- Αρκεί να κατεβάσεις **μόνο** το έτοιμο πακέτο `mNetStationKit.zip` (βλ. βήμα 1).
+
 Σημείωση για paths (πολύ σημαντικό):
 
 - Το γράμμα του USB stick **διαφέρει** από υπολογιστή σε υπολογιστή (π.χ. `D:`, `E:`, `F:`…).
@@ -30,8 +35,12 @@ Monitoring URL: `http://localhost:8080/`
 
 ## 1) Βάλε το kit στο USB
 
-1. Κατέβασε από το GitHub το folder `mNetStationKit` (ZIP download είναι ΟΚ).
-2. Κάνε extract **στο root** του USB, ώστε να υπάρχει:
+1. Κατέβασε από το GitHub **μόνο** το αρχείο `mNetStationKit.zip` (δεν χρειάζεται να κατεβάσεις όλο το repo):
+   - `https://github.com/AMarantis/mNet_StationKit/blob/main/mNetStationKit.zip`
+   - (Στο GitHub θα ανοίξει σελίδα αρχείου· πάτα **Download** / **Download raw file** για να κατέβει το `.zip`.)
+2. Κάνε extract **στο root** του USB, ώστε να καταλήξεις σε έναν φάκελο:
+   - `X:\mNetStationKit\`
+   που μέσα του έχει:
 
 - `X:\mNetStationKit\config\`
 - `X:\mNetStationKit\scripts\`
@@ -40,6 +49,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Σημείωση:
 
+- Αν μετά το extract δεις τους φακέλους `config/`, `scripts/`, `payload/`, `deps/` **κατευθείαν** στο root του USB (δηλ. `X:\config\` κτλ), τότε δημιούργησε φάκελο `X:\mNetStationKit\` και μετακίνησέ τα μέσα σε αυτόν.
 - Δεν θέλουμε να καταλήξεις σε **διπλό folder**, π.χ. `X:\mNetStationKit\mNetStationKit\...`
   - Αν συμβεί, είτε:
     - κάνε extract ξανά στο **root** του USB, ή
@@ -157,7 +167,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Εναλλακτικά (αν έχεις φτιάξει shortcuts στο Desktop από το 4.1):
 
-- πάτα `mNetStationKit - Start DAQ Calibration`
+- πάτα `Start Calibration`
 
 Έλεγχος ότι “γράφει”:
 
@@ -173,7 +183,7 @@ Monitoring URL: `http://localhost:8080/`
 
 Εναλλακτικά (αν έχεις φτιάξει shortcuts στο Desktop από το 4.1):
 
-- πάτα `mNetStationKit - Start Monitoring`
+- πάτα `Start Monitoring`
 
 Το script ανοίγει αυτόματα τον default browser στο:
 
@@ -247,7 +257,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 2) Σταμάτα το DAQ process:
 - Τρέξε `scripts/Stop-DAQ.cmd`
-  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop DAQ`
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `Stop DAQ`
 
 Σημείωση:
 - Δεν χρειάζεται να κλείσεις τον browser. Απλά μετά πήγαινε tab **Online Monitoring** για το showers.
@@ -264,7 +274,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Εναλλακτικά (αν έχεις φτιάξει shortcuts στο Desktop από το 4.1):
 
-- πάτα `mNetStationKit - Start DAQ Showers`
+- πάτα `Start Showers`
 
 Έλεγχος ότι “γράφει”:
 
@@ -324,11 +334,11 @@ Reconstructed events μπορεί να γράφονται και στο:
 
 2) Σταμάτα το DAQ:
 - Τρέξε `scripts/Stop-DAQ.cmd`
-  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop DAQ`
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `Stop DAQ`
 
 3) Κλείσε το Monitoring UI (IIS Express):
 - Τρέξε `scripts/Stop-Monitoring.cmd`
-  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop Monitoring`
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `Stop Monitoring`
 
 4) Κλείσε τον browser (προαιρετικό):
 - Κλείσε απλά το tab/παράθυρο.
@@ -353,7 +363,7 @@ Reconstructed events μπορεί να γράφονται και στο:
 - Δεν πρέπει να τρέχουν ταυτόχρονα.
 - Αν ξεκινήσεις το ένα ενώ τρέχει το άλλο, κλείσε το άλλο πρώτα.
 - Για γρήγορο κλείσιμο: τρέξε `scripts/Stop-DAQ.cmd`.
-  - Εναλλακτικά (αν έχεις shortcuts): πάτα `mNetStationKit - Stop DAQ`.
+  - Εναλλακτικά (αν έχεις shortcuts): πάτα `Stop DAQ`.
 
 ### C) Decimal separator (πολύ σημαντικό)
 
