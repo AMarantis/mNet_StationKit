@@ -11,15 +11,174 @@ using System.Web.UI.HtmlControls;
 using System.Web.Caching;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Globalization;
 namespace WebApplication2
 {
     public partial class WebForm4 : System.Web.UI.Page
     {
+        private const long ShowerEventBytes = 5061;
         static int ic = 0;
         static int myYear = 2022;
         static int myMonth = 7;
         static int myDay =21;//6,6 21,6  6,7  21,7
         static int myHour = 0;
+
+        private bool IsReadAllMode()
+        {
+            return HttpContext.Current.Session["ReadAll"] != null && HttpContext.Current.Session["ReadAll"].ToString() == "1";
+        }
+
+        private string GetKitLogsPath()
+        {
+            string webRoot = Server.MapPath("~");
+            if (string.IsNullOrWhiteSpace(webRoot)) return null;
+            string kitRoot = Path.GetFullPath(Path.Combine(webRoot, "..", ".."));
+            string logsPath = Path.Combine(kitRoot, "logs");
+            if (!Directory.Exists(logsPath))
+            {
+                Directory.CreateDirectory(logsPath);
+            }
+            return logsPath;
+        }
+
+        private void AppendMonitoringLog(string fileName, string level, string message, Exception ex = null)
+        {
+            try
+            {
+                string logsPath = GetKitLogsPath();
+                if (string.IsNullOrWhiteSpace(logsPath)) return;
+                string filePath = Path.Combine(logsPath, fileName);
+
+                string currentFile = "";
+                if (HttpContext.Current.Session["Shower_Current_File"] != null)
+                {
+                    currentFile = HttpContext.Current.Session["Shower_Current_File"].ToString();
+                }
+
+                string line = string.Format(
+                    "{0:yyyy-MM-dd HH:mm:ss.fff} [{1}] {2}{3}{4}",
+                    DateTime.Now,
+                    level,
+                    message,
+                    string.IsNullOrWhiteSpace(currentFile) ? "" : " | file=" + currentFile,
+                    ex == null ? "" : " | ex=" + ex.GetType().Name + ": " + ex.Message
+                );
+
+                File.AppendAllText(filePath, line + Environment.NewLine);
+            }
+            catch
+            {
+                ;
+            }
+        }
+
+        private bool TryParseFloatToken(string token, out float value)
+        {
+            token = (token ?? string.Empty).Trim();
+            return float.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+                   float.TryParse(token, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
+        private bool TryParseIntToken(string token, out int value)
+        {
+            token = (token ?? string.Empty).Trim();
+            return int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) ||
+                   int.TryParse(token, NumberStyles.Integer, CultureInfo.CurrentCulture, out value);
+        }
+
+        private bool TryParseFixedLine4(string line, out float[] values, out string errorReason)
+        {
+            values = new float[4];
+            if (line == null)
+            {
+                errorReason = "line is null";
+                return false;
+            }
+            if (line.Length < 19)
+            {
+                errorReason = "line too short: len=" + line.Length;
+                return false;
+            }
+
+            string[] tokens = new string[4];
+            tokens[0] = line.Substring(0, 5);
+            tokens[1] = line.Substring(6, 5);
+            tokens[2] = line.Substring(12, 5);
+            tokens[3] = line.Substring(18);
+
+            for (int i = 0; i < 4; i++)
+            {
+                if (!TryParseFloatToken(tokens[i], out values[i]))
+                {
+                    errorReason = "invalid float token[" + i + "]='" + tokens[i] + "'";
+                    return false;
+                }
+            }
+
+            errorReason = "";
+            return true;
+        }
+
+        private bool TryParseTimeLine(string line, out int minutes, out int seconds, out int milliseconds, out string errorReason)
+        {
+            minutes = 0;
+            seconds = 0;
+            milliseconds = 0;
+
+            if (line == null)
+            {
+                errorReason = "time line is null";
+                return false;
+            }
+            if (line.Length < 9)
+            {
+                errorReason = "time line too short: len=" + line.Length;
+                return false;
+            }
+
+            string token0 = line.Substring(0, 2);
+            string token1 = line.Substring(3, 2);
+            string token2 = line.Substring(5, 4);
+
+            if (!TryParseIntToken(token0, out minutes))
+            {
+                errorReason = "invalid minute token='" + token0 + "'";
+                return false;
+            }
+            if (!TryParseIntToken(token1, out seconds))
+            {
+                errorReason = "invalid second token='" + token1 + "'";
+                return false;
+            }
+            if (!TryParseIntToken(token2, out milliseconds))
+            {
+                errorReason = "invalid millisecond token='" + token2 + "'";
+                return false;
+            }
+
+            errorReason = "";
+            return true;
+        }
+
+        private void SafeSeekReader(StreamReader reader, long absolutePosition)
+        {
+            if (reader == null) return;
+            if (absolutePosition < 0) absolutePosition = 0;
+            reader.DiscardBufferedData();
+            reader.BaseStream.Seek(absolutePosition, SeekOrigin.Begin);
+        }
+
+        private void AlignToLastCompletedEvent(StreamReader reader)
+        {
+            if (reader == null) return;
+            reader.DiscardBufferedData();
+            reader.BaseStream.Seek(0, SeekOrigin.End);
+            long endPos = reader.BaseStream.Position;
+            long alignedPos = endPos - (endPos % ShowerEventBytes);
+            reader.DiscardBufferedData();
+            reader.BaseStream.Seek(alignedPos, SeekOrigin.Begin);
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             HttpContext.Current.Session["ReadAll"] = 0;// use 1 to read  all previous files and save them in D:Save_Pulses_Showers_Rec
@@ -375,7 +534,7 @@ namespace WebApplication2
 
                 var file = new FileStream(strRootRelativePathName1, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 StreamReader rs = new StreamReader(file);
-                rs.BaseStream.Seek(0, SeekOrigin.Begin);
+                SafeSeekReader(rs, 0);
                 HttpContext.Current.Session["Shower_Current_File"] = filename;
                 HttpContext.Current.Session["Shower_rs"] = rs;
                 return true;
@@ -393,22 +552,16 @@ namespace WebApplication2
                 HttpContext.Current.Session["Shower_rs"] = rs;
                 if (!filechanged || old_filename=="nofile")
                 {
-                    //rs = File.OpenText(strRootRelativePathName);
-                    //rs.BaseStream.Seek(-4221, SeekOrigin.End);
-                    //return;
-                    rs.ReadToEnd();
-                    long pos = rs.BaseStream.Position;
-                    decimal events = (pos / 5061) - System.Math.Floor((decimal)(pos / 5061));
-                    if (events > 0)
-                    {
-                        long p = (long)System.Math.Floor((decimal)(pos / 5061));
-                        rs.BaseStream.Seek(p, SeekOrigin.Begin);
-                    }
+                    AlignToLastCompletedEvent(rs);
                 }
                 else
                 {
                     ;
                 }
+            }
+            else
+            {
+                AppendMonitoringLog("monitoring_warnings.log", "WARN", "Expected shower data file does not exist: " + strRootRelativePathName);
             }
             return true;
         }
@@ -659,114 +812,106 @@ namespace WebApplication2
         {
             StreamReader rs = (StreamReader)HttpContext.Current.Session["Shower_rs"];
             if (rs == null) return 0;//this is caught in the previous calling routine
+            bool readAllMode = IsReadAllMode();
             float[] peak = new float[4] { -1, -1, -1, 1 };
             float[] vflag = new float[4] { -1, -1, -1, 1 };
             long record = rs.BaseStream.Length - rs.BaseStream.Position;
-            if (record > 5060)
+            if (record > (ShowerEventBytes - 1))
                 ;
-            float events = record / 5061;
-            if (record < 5061) //this will update the file if the hour is changed? Yes. Also if we have not a completed event, it will give time to be completed 
+            float events = record / ShowerEventBytes;
+            if (record < ShowerEventBytes) //this will update the file if the hour is changed? Yes. Also if we have not a completed event, it will give time to be completed 
             {
                 Set_File_Position();//set to the beggining of the last event if it is partially written or to the end of fully written event
                 return 0;
             }
             // there are at least one full event
-            long this_event_start = -1;
             int evts_read = 0;
             int maxevt = 2000;
-            if (HttpContext.Current.Session["ReadAll"].ToString() == "1") maxevt = 99999999;
+            if (readAllMode) maxevt = 99999999;
             while (evts_read < maxevt) //
             {
-                try
+                string line = rs.ReadLine();
+                if (line == null)
+                    return evts_read;//this should happen when all events are read
+
+                float[] parsedValues;
+                string parseError;
+                if (!TryParseFixedLine4(line, out parsedValues, out parseError))
                 {
-                    string line = rs.ReadLine();
-                    if (line == null) 
-                        return evts_read;//this should happen when al events are read (see line 357)
-                    string[] flags = new string[4];
-                    flags[0] = line.Substring(0, 5);
-                    flags[1] = line.Substring(6, 5);
-                    flags[2] = line.Substring(12, 5);
-                    flags[3] = line.Substring(18);
-                    for (int i = 0; i < 4; i++) vflag[i] = (float)Convert.ChangeType(flags[i], typeof(float));
-                    this_event_start = rs.BaseStream.Position;
-                    if (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
+                    AppendMonitoringLog("monitoring_errors.log", "WARN", "Flag parse failed at position " + rs.BaseStream.Position + ". " + parseError + ".");
+                    if (readAllMode) { continue; }
+                    Set_File_Position();
+                    return evts_read;
+                }
+
+                for (int i = 0; i < 4; i++) vflag[i] = parsedValues[i];
+                if (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
+                {
+                    if (readAllMode)
                     {
-                        if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
+                        while (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99) //just keep reading until you find the flag
                         {
-                            while (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99) //just keep reding until you find the flag
+                            line = rs.ReadLine();
+                            if (line == null) return evts_read;
+                            if (!TryParseFixedLine4(line, out parsedValues, out parseError))
                             {
-                                line = rs.ReadLine();
-                                if (line == null) return evts_read;
-                                flags[0] = line.Substring(0, 5);
-                                flags[1] = line.Substring(6, 5);
-                                flags[2] = line.Substring(12, 5);
-                                flags[3] = line.Substring(18);
-                                //string[] elements = line.Split(' ');
-                                for (int i = 0; i < 4; i++) vflag[i] = (float)Convert.ChangeType(flags[i], typeof(float));
+                                AppendMonitoringLog("monitoring_errors.log", "WARN", "Flag resync parse failed at position " + rs.BaseStream.Position + ". " + parseError + ".");
+                                continue;
                             }
+                            for (int i = 0; i < 4; i++) vflag[i] = parsedValues[i];
                         }
-                        else { Set_File_Position(); return evts_read; }//this is called again and again until a new good event is written
                     }
-                }
-                catch (Exception)
-                {
-
-                    if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
+                    else
                     {
-                        ;
+                        Set_File_Position();
+                        return evts_read; //this is called again and again until a new good event is written
                     }
-                    else throw;
                 }
 
-                try
+                line = rs.ReadLine();
+                if (line == null)
                 {
-                    string line = rs.ReadLine();
-                    if (line == null) 
-                    { Set_File_Position(); return evts_read; }
-                    string[] flags = new string[4];
-                    flags[0] = line.Substring(0, 2);
-                    flags[1] = line.Substring(3, 2);
-                    flags[2] = line.Substring(5, 4);
-                    for (int i = 0; i < 3; i++) vflag[i] = (float)Convert.ChangeType(flags[i], typeof(float));
-                    int[] eventInfo = (int[])(Session["EventTime"]);
-                    eventInfo[4]=(int)Convert.ChangeType(flags[0], typeof(int));
-                    eventInfo[5] = (int)Convert.ChangeType(flags[1], typeof(int));
-                    eventInfo[6] = (int)Convert.ChangeType(flags[2], typeof(int));
-                    HttpContext.Current.Session["EventTime"] = eventInfo;
+                    Set_File_Position();
+                    return evts_read;
                 }
-                catch (Exception)
-                {
 
-                    if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
+                int eventMinute, eventSecond, eventMillisecond;
+                if (!TryParseTimeLine(line, out eventMinute, out eventSecond, out eventMillisecond, out parseError))
+                {
+                    AppendMonitoringLog("monitoring_errors.log", "WARN", "Time parse failed at position " + rs.BaseStream.Position + ". " + parseError + ".");
+                    if (readAllMode)
                     {
-                        ;
+                        continue;
                     }
-                    else throw;
+                    Set_File_Position();
+                    return evts_read;
                 }
+
+                int[] eventInfo = (int[])(Session["EventTime"]);
+                eventInfo[4] = eventMinute;
+                eventInfo[5] = eventSecond;
+                eventInfo[6] = eventMillisecond;
+                HttpContext.Current.Session["EventTime"] = eventInfo;
 
                 ic++;
-                try
+                line = rs.ReadLine();
+                if (line == null)
                 {
-                    string line = rs.ReadLine();
-                    if (line == null) 
-                    { Set_File_Position(); return evts_read; }
-                    string[] elements = new string[4];
-                    elements[0] = line.Substring(0, 5);
-                    elements[1] = line.Substring(6, 5);
-                    elements[2] = line.Substring(12, 5);
-                    elements[3] = line.Substring(18);
-                    //string[] elements = line.Split(' ');
-                    for (int i = 0; i < 4; i++) peak[i] = (float)Convert.ChangeType(elements[i], typeof(float));
+                    Set_File_Position();
+                    return evts_read;
                 }
-                catch (Exception)
-                {
 
-                    if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
+                if (!TryParseFixedLine4(line, out parsedValues, out parseError))
+                {
+                    AppendMonitoringLog("monitoring_errors.log", "WARN", "Peak parse failed at position " + rs.BaseStream.Position + ". " + parseError + ".");
+                    if (readAllMode)
                     {
-                        ;
+                        continue;
                     }
-                    else throw;
+                    Set_File_Position();
+                    return evts_read;
                 }
+                for (int i = 0; i < 4; i++) peak[i] = parsedValues[i];
 
                 string ss = HttpContext.Current.Session["Station"].ToString();
                 int Station = (int)Convert.ChangeType(ss, typeof(int));
@@ -793,34 +938,29 @@ namespace WebApplication2
                 if (Station >= 16) { ch1 = 0; ch2 = 1; ch3 = 2; }//123
 
                 float[,] vv = new float[4, 200];
+                bool waveformMalformed = false;
                 for (int k = 0; k < 200; k++)
                 {
-                    string line = rs.ReadLine(); ic++;
+                    line = rs.ReadLine(); ic++;
                     if (line == null)
                     {
-                        Set_File_Position(); return evts_read; 
-                        //line = rs.ReadLine();
-                        //string ss9 = line;
+                        AppendMonitoringLog("monitoring_errors.log", "WARN", "Waveform line is null for sample " + k + ".");
+                        waveformMalformed = true;
+                        break;
                     }
-                    try
+                    if (!TryParseFixedLine4(line, out parsedValues, out parseError))
                     {
-
-                        string[] elements = new string[4];
-                        elements[0] = line.Substring(0, 5);
-                        elements[1] = line.Substring(6, 5);
-                        elements[2] = line.Substring(12, 5);
-                        elements[3] = line.Substring(18);
-                        for (int i = 0; i < 4; i++) vv[i, k] = (float)Convert.ChangeType(elements[i], typeof(float));
+                        AppendMonitoringLog("monitoring_errors.log", "WARN", "Waveform parse failed at sample " + k + " position " + rs.BaseStream.Position + ". " + parseError + ".");
+                        waveformMalformed = true;
+                        break;
                     }
-                    catch (Exception)
-                    {
-
-                        if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
-                        {
-                            ;
-                        }
-                        else throw;
-                    }
+                    for (int i = 0; i < 4; i++) vv[i, k] = parsedValues[i];
+                }
+                if (waveformMalformed)
+                {
+                    if (readAllMode) { continue; }
+                    Set_File_Position();
+                    return evts_read;
                 }
                 for (int ch=0;ch<4;ch++)
                 {
@@ -879,16 +1019,17 @@ namespace WebApplication2
             {
                 Read_Events_and_Show(); 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                long record = rs.BaseStream.Length - (pos + 5061);
-                if (record > 5061)
-                    rs.BaseStream.Seek(pos + 5061, SeekOrigin.Begin);
+                AppendMonitoringLog("monitoring_errors.log", "ERROR", "Read_Events_and_Show_Protected failed at stream position " + pos + ".", ex);
+                long record = rs.BaseStream.Length - (pos + ShowerEventBytes);
+                if (record > ShowerEventBytes)
+                    SafeSeekReader(rs, pos + ShowerEventBytes);
                 else
-                    rs.BaseStream.Seek(pos, SeekOrigin.Begin);
-                throw;
+                    SafeSeekReader(rs, pos);
                 if (IsAcquisitionStarted == "1") //Read_Events_and_Show changes the session variable in case of failure. Catch the failure and revert
                     HttpContext.Current.Session["Shower_Acquisition_Started"] = 1;
+                return;
             }
         }
 
@@ -904,10 +1045,10 @@ namespace WebApplication2
                 {
                     read_events=Read_events();//in case of scan only 1 event is read (reconstrcted)
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-
-                    throw;
+                    AppendMonitoringLog("monitoring_errors.log", "ERROR", "Read_Events_and_Show failed while reading events.", ex);
+                    return;
                 }
                 finally
                 {
