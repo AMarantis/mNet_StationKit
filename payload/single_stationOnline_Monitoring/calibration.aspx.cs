@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Web.UI.HtmlControls;
 using System.Web.Caching;
 using System.Threading.Tasks;
+using System.Globalization;
 namespace WebApplication2
 {
     public partial class WebForm1 : System.Web.UI.Page
@@ -189,6 +190,131 @@ namespace WebApplication2
             {
                 Batchresults += Environment.NewLine + e.Data.ToString();
 
+            }
+        }
+
+        private bool TryParseDoubleAnyCulture(string token, out double value)
+        {
+            token = (token ?? string.Empty).Trim();
+            return double.TryParse(token, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+                   double.TryParse(token, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
+        private bool IsInvalidCalibrationValue(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value)) return true;
+            if (Math.Abs(value) >= 9000.0) return true; // excludes sentinel values like 9999 / -9999
+            return false;
+        }
+
+        private double? ComputeMeanFromSingleColumnFile(string path)
+        {
+            if (!File.Exists(path)) return null;
+
+            double sum = 0.0;
+            int count = 0;
+            foreach (string rawLine in File.ReadLines(path))
+            {
+                string line = (rawLine ?? string.Empty).Trim();
+                if (line == string.Empty) continue;
+
+                double value;
+                if (!TryParseDoubleAnyCulture(line, out value)) continue;
+                if (IsInvalidCalibrationValue(value)) continue;
+
+                sum += value;
+                count++;
+            }
+
+            if (count == 0) return null;
+            return sum / count;
+        }
+
+        private double?[] ComputeTimingMeans(string path)
+        {
+            double sum1 = 0.0;
+            double sum2 = 0.0;
+            int count1 = 0;
+            int count2 = 0;
+
+            if (File.Exists(path))
+            {
+                foreach (string rawLine in File.ReadLines(path))
+                {
+                    string line = (rawLine ?? string.Empty).Trim();
+                    if (line == string.Empty) continue;
+
+                    string[] tokens = line.Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length < 2) continue;
+
+                    double val1;
+                    if (TryParseDoubleAnyCulture(tokens[0], out val1) && !IsInvalidCalibrationValue(val1))
+                    {
+                        sum1 += val1;
+                        count1++;
+                    }
+
+                    double val2;
+                    if (TryParseDoubleAnyCulture(tokens[1], out val2) && !IsInvalidCalibrationValue(val2))
+                    {
+                        sum2 += val2;
+                        count2++;
+                    }
+                }
+            }
+
+            return new double?[]
+            {
+                count1 > 0 ? (double?)(sum1 / count1) : null,
+                count2 > 0 ? (double?)(sum2 / count2) : null
+            };
+        }
+
+        private string FormatSummaryNumber(double value)
+        {
+            return value.ToString("0.####", CultureInfo.InvariantCulture);
+        }
+
+        private void ExportCalibrationSummaryIfIdle()
+        {
+            try
+            {
+                if (HttpContext.Current.Session["Calibration_Response_Started"] == null) return;
+                if (HttpContext.Current.Session["Calibration_Sync_Started"] == null) return;
+                if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() != "0") return;
+                if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() != "0") return;
+                if (HttpContext.Current.Session["Calibration_folder"] == null) return;
+
+                string calibrationFolder = HttpContext.Current.Session["Calibration_folder"].ToString();
+                string station = HttpContext.Current.Session["Station"] == null ? "0" : HttpContext.Current.Session["Station"].ToString();
+
+                string calibrationPath = Server.MapPath(@"~\App_Data\" + calibrationFolder);
+                if (!Directory.Exists(calibrationPath)) return;
+
+                double?[] timingMeans = ComputeTimingMeans(Path.Combine(calibrationPath, "timing.txt"));
+                double? peak1 = ComputeMeanFromSingleColumnFile(Path.Combine(calibrationPath, "test1.txt"));
+                double? peak2 = ComputeMeanFromSingleColumnFile(Path.Combine(calibrationPath, "test2.txt"));
+                double? peak3 = ComputeMeanFromSingleColumnFile(Path.Combine(calibrationPath, "test3.txt"));
+
+                string summaryPath = Server.MapPath(@"~\App_Data\last_calibration_summary.txt");
+                using (StreamWriter writer = new StreamWriter(summaryPath, false))
+                {
+                    writer.WriteLine("station=" + station);
+                    writer.WriteLine("calibration_folder=" + calibrationFolder);
+                    writer.WriteLine("generated_at_utc=" + DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture));
+
+                    if (timingMeans[0].HasValue) writer.WriteLine("offset1=" + FormatSummaryNumber(timingMeans[0].Value));
+                    if (timingMeans[1].HasValue) writer.WriteLine("offset2=" + FormatSummaryNumber(timingMeans[1].Value));
+                    writer.WriteLine("offset3=0.0");
+
+                    if (peak1.HasValue) writer.WriteLine("peak1=" + FormatSummaryNumber(peak1.Value));
+                    if (peak2.HasValue) writer.WriteLine("peak2=" + FormatSummaryNumber(peak2.Value));
+                    if (peak3.HasValue) writer.WriteLine("peak3=" + FormatSummaryNumber(peak3.Value));
+                }
+            }
+            catch (Exception)
+            {
+                ;
             }
         }
 
@@ -1061,6 +1187,7 @@ namespace WebApplication2
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") this.Timer1.Enabled = false;
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
             ShowStatusResponse();
+            ExportCalibrationSummaryIfIdle();
             Response.Write("<script>alert('" + "Acquisition stopped. To resume without resetting the plots, press start." + "')</script>");
         }
         protected void Stop_Acquisition_Sync(object sender, EventArgs e)
@@ -1070,6 +1197,7 @@ namespace WebApplication2
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") this.Timer1.Enabled = false;
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
             ShowStatusSync();
+            ExportCalibrationSummaryIfIdle();
             Response.Write("<script>alert('" + "Acquisition stopped. To resume without resetting the plots, press start." + "')</script>");
         }
         protected void Clear_All(object sender, EventArgs e)

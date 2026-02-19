@@ -1,111 +1,88 @@
 # Troubleshooting / Known Bugs (mNetStationKit)
 
-Το αρχείο αυτό κρατάει **γνωστά προβλήματα** που έχουν εμφανιστεί σε σταθμούς, μαζί με **πιθανές αιτίες** και **προτεινόμενες λύσεις**.
+Το αρχείο αυτό κρατάει γνωστά προβλήματα, διάγνωση και τι έχει ήδη διορθωθεί.
 
 ---
 
-## Bug: “Server Error in '/' Application” στο Online Monitoring μετά από πολλές ώρες
+## Commit 1 που έγινε ήδη (hash `3f29c25`)
+
+Τίτλος commit: `Monitoring: robust parsing + runtime logs (no physics change)`
+
+### Τι αλλάξαμε
+
+- Στο `payload/single_stationOnline_Monitoring/OnlineMonitoring.aspx.cs` προστέθηκε robust parsing (safe checks πριν από fixed-width parsing).
+- Τα malformed/partial records δεν ρίχνουν πλέον άμεσα το UI· γίνονται skip/recover και συνεχίζει η ροή.
+- Προστέθηκαν runtime logs για monitoring:
+  - `X:\mNetStationKit\logs\monitoring_errors.log`
+  - `X:\mNetStationKit\logs\monitoring_warnings.log`
+- Προστέθηκε ασφαλέστερη διαχείριση stream position/alignment για resync σε έγκυρο boundary event.
+
+### Τι **δεν** αλλάξαμε
+
+- Δεν άλλαξε ο DAQ κώδικας (`VCDSO.exe` calibration/showers).
+- Δεν άλλαξε το format που γράφεται στα `*.data` / `*.showerdata`.
+- Δεν άλλαξε η “φυσική” (αλγόριθμοι υπολογισμού/plots/reconstruction).
+
+---
+
+## Bug: “Index and length must refer to a location within the string”
 
 ### Συμπτώματα
 
-- Στο browser (π.χ. `http://localhost:8080/OnlineMonitoring`) εμφανίζεται “Server Error in '/' Application”.
-- Το μήνυμα περιλαμβάνει:
-  - `System.ArgumentOutOfRangeException: Index and length must refer to a location within the string. Parameter name: length`
-- Stack trace δείχνει συνήθως:
-  - `OnlineMonitoring.aspx.cs` μέσα σε `Read_events()`
-  - σε γραμμές τύπου `line.Substring(...)` (fixed-width parsing).
+- Στο `http://localhost:8080/OnlineMonitoring` εμφανίζεται ASP.NET server error.
+- Exception: `System.ArgumentOutOfRangeException` με `Parameter name: length`.
+- Stack trace συνήθως δείχνει `Read_events()` στο `OnlineMonitoring.aspx.cs`.
 
-### Πιθανή αιτία (most likely)
+### Ρίζα προβλήματος
 
-Ο κώδικας του monitoring διαβάζει το `*.showerdata` αρχείο **την ίδια στιγμή** που το DAQ (`VCDSO.exe`) το γράφει. Αν “πιάσει”:
+Το monitoring διαβάζει live αρχείο `*.showerdata` την ώρα που το DAQ γράφει. Αν διαβαστεί μισογραμμένη/κατεστραμμένη γραμμή, το fixed-width parsing μπορεί να αποτύχει.
 
-- κενή γραμμή,
-- ή μερικώς γραμμένη γραμμή (partial write),
-- ή κακή ευθυγράμμιση record (π.χ. μετά από restart/kill του DAQ),
+### Σχέση με χώρο στον `C:`
 
-τότε το `Substring` σε fixed θέσεις αποτυγχάνει και ρίχνει exception → το UI σκάει.
-
-### Σχετίζεται με πολύ λίγο free space στον C:;
-
-- **Δεν είναι η άμεση αιτία** του συγκεκριμένου `Substring` exception.
-- Όμως, αν ο `C:` έχει μείνει με **ελάχιστο χώρο** (π.χ. ~12MB), μπορεί να προκαλέσει δευτερογενή προβλήματα (temp files, caching, αστάθεια υπηρεσιών/διεργασιών).
-- Για σταθερή λειτουργία, κρατάμε πρακτικά στόχο: **>= 1–2 GB ελεύθερα** στον `C:` (ή περισσότερο).
+- Δεν είναι η βασική αιτία του συγκεκριμένου exception.
+- Όμως πολύ χαμηλός χώρος (`~MB`) αυξάνει γενικά την αστάθεια. Στόχος: τουλάχιστον `1–2 GB` ελεύθερα.
 
 ---
 
-## Άμεση αποκατάσταση (στον σταθμό)
+## Τι ελέγχουμε όταν συμβεί
 
-Για να επανέλθει το monitoring όταν εμφανιστεί το “Server Error”:
-
-- 1) Ελευθέρωσε χώρο στον `C:` (στόχος: >= 1–2 GB free).
-- 2) Κλείσε/επανεκκίνησε τη ροή:
-  - `scripts/Stop-Monitoring.cmd`
-  - `scripts/Stop-DAQ.cmd`
-  - `scripts/Start-Monitoring.cmd`
-  - `scripts/Start-DAQ-Showers.cmd`
-
-Σημείωση:
-- Αν υπάρχει “κομμένο”/corrupt record στο τρέχον αρχείο της ώρας, η επανεκκίνηση συνήθως μετακινεί την ανάγνωση σε νέο/σωστό σημείο.
-
----
-
-## Γρήγορη διάγνωση (τι να μαζέψεις)
-
-- 1) Έλεγξε ότι γράφονται δεδομένα:
+- Επιβεβαίωση ότι ο DAQ συνεχίζει:
   - `D:\Save_Pulses_Showers_Phase2\*.showerdata`
-  - `D:\Save_Pulses_Showers_Rec_Phase2\*` (αν γράφει reconstructed events)
-- 2) Έλεγξε τα kit logs:
+- Logs monitoring:
+  - `X:\mNetStationKit\logs\monitoring_errors.log`
+  - `X:\mNetStationKit\logs\monitoring_warnings.log`
+- Logs watchdog:
   - `X:\mNetStationKit\logs\restart_daq_watchdog.log`
-- 3) Πάρε πακέτο logs:
-  - τρέξε `scripts/Collect-Logs.cmd`
-  - θα γράψει zip στο `X:\mNetStationKit\logs\mnet_logs_*.zip`
+- Συλλογή πλήρους πακέτου:
+  - `scripts/Collect-Logs.cmd`
+  - Παράγει `X:\mNetStationKit\logs\mnet_logs_*.zip`
 
 ---
 
-## Προτεινόμενη μόνιμη λύση (fix στον κώδικα του monitoring)
+## Άμεση αποκατάσταση στον σταθμό
 
-Στόχος: να μην “ρίχνει” όλο το UI όταν συναντήσει malformed/partial γραμμή σε live mode.
+- `scripts/Stop-Monitoring.cmd`
+- `scripts/Stop-DAQ.cmd`
+- `scripts/Start-Monitoring.cmd`
+- `scripts/Start-DAQ-Showers.cmd`
 
-### Option A (προτεινόμενο): “Robust parsing” με checks
-
-Στη `Read_events()` (στο `payload/single_stationOnline_Monitoring/OnlineMonitoring.aspx.cs`) όπου γίνεται:
-
-- `line.Substring(0, 5)`
-- `line.Substring(6, 5)`
-- `line.Substring(12, 5)`
-- `line.Substring(18)`
-
-να μπει πριν:
-
-- `if (string.IsNullOrWhiteSpace(line) || line.Length < 19) { Set_File_Position(); return evts_read; }`
-
-και όπου αλλού υπάρχει fixed-width parsing.
-
-Αυτό κάνει το UI “self-healing”: αν πιάσει partial write, περιμένει το επόμενο tick.
-
-### Option B: “Skip malformed event” (χωρίς Set_File_Position)
-
-Αν βρεθεί malformed γραμμή, αντί να γίνεται throw:
-
-- να γίνεται `continue` (skip) ή να μετακινεί το stream σε ασφαλές boundary.
-
-Θέλει προσοχή γιατί μπορεί να “χαθεί” συγχρονισμός του record format.
-
-### Option C: “ReadAll mode only” workaround
-
-Σαν workaround, αν σε κάποιες περιπτώσεις το live mode είναι εύθραυστο, να επιτρέπεται λειτουργία που διαβάζει μόνο πλήρως κλεισμένα αρχεία (π.χ. προηγούμενης ώρας).
-
-Μειονέκτημα: χάνει “real-time” αίσθηση.
+Αν υπάρχει malformed record στο τρέχον αρχείο ώρας, η επανεκκίνηση συνήθως επαναφέρει σωστή ευθυγράμμιση.
 
 ---
 
-## Watchdog interaction (πιθανό σενάριο)
+## Commit 2 (auto parameter handoff από Calibration -> Online Monitoring)
 
-Αν το watchdog κάνει restart το `VCDSO.exe` ακριβώς τη στιγμή που γράφει, μπορεί να αφήσει partial record.
+### Τι υλοποιήθηκε
 
-Mitigations:
+- Στο STOP του calibration παράγεται summary αρχείο:
+  - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\last_calibration_summary.txt`
+- Το summary περιέχει αυτόματα:
+  - `offset1`, `offset2`, `offset3`
+  - `peak1`, `peak2`, `peak3`
+  - `station`, `calibration_folder`, `generated_at_utc`
+- Στο `OnlineMonitoring.aspx.cs` το summary διαβάζεται αυτόματα στο load και περνά στις τιμές των parameters.
 
-- Μικρή καθυστέρηση πριν restart (υπάρχει ήδη μικρό sleep).
-- Έλεγχος “recent write” υπάρχει ήδη· ωστόσο δεν εγγυάται ότι δεν θα γίνει restart σε write boundary.
-- Ο πιο σωστός τρόπος είναι το monitoring να είναι robust (Option A), ώστε να αντέχει partial writes.
+### Κανόνας invalid τιμών
 
+- Τιμές τύπου `9999` / `-9999` (και γενικά `abs(value) >= 9000`) θεωρούνται invalid και αγνοούνται από τον υπολογισμό means.
+- Αν το summary δεν έχει έγκυρες τιμές, δεν σπάει το UI· κρατούνται defaults/session values και γράφεται warning log.

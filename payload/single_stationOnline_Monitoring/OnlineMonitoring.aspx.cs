@@ -179,6 +179,123 @@ namespace WebApplication2
             reader.BaseStream.Seek(alignedPos, SeekOrigin.Begin);
         }
 
+        private string FormatSessionFloat(float value)
+        {
+            return value.ToString("0.####", CultureInfo.InvariantCulture);
+        }
+
+        private bool IsInvalidSummaryValue(float value)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value)) return true;
+            if (Math.Abs(value) >= 9000.0f) return true; // excludes sentinel values like 9999 / -9999
+            return false;
+        }
+
+        private bool TryGetSummaryFloat(Dictionary<string, string> map, string key, out float value)
+        {
+            value = 0.0f;
+            string raw;
+            if (!map.TryGetValue(key, out raw)) return false;
+            if (!TryParseFloatToken(raw, out value)) return false;
+            if (IsInvalidSummaryValue(value)) return false;
+            return true;
+        }
+
+        private void ApplyCalibrationSummaryIfNew()
+        {
+            try
+            {
+                string summaryPath = Server.MapPath(@"~\App_Data\last_calibration_summary.txt");
+                if (!File.Exists(summaryPath)) return;
+
+                string stamp = File.GetLastWriteTimeUtc(summaryPath).Ticks.ToString(CultureInfo.InvariantCulture);
+                string previousStamp = HttpContext.Current.Session["Shower_Calibration_Summary_Stamp"] == null
+                    ? ""
+                    : HttpContext.Current.Session["Shower_Calibration_Summary_Stamp"].ToString();
+                if (stamp == previousStamp) return;
+
+                Dictionary<string, string> map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (string rawLine in File.ReadAllLines(summaryPath))
+                {
+                    string line = (rawLine ?? string.Empty).Trim();
+                    if (line == string.Empty) continue;
+                    int idx = line.IndexOf('=');
+                    if (idx <= 0 || idx >= line.Length - 1) continue;
+                    string key = line.Substring(0, idx).Trim();
+                    string value = line.Substring(idx + 1).Trim();
+                    if (key == string.Empty) continue;
+                    map[key] = value;
+                }
+
+                int currentStation;
+                if (HttpContext.Current.Session["Station"] != null &&
+                    TryParseIntToken(HttpContext.Current.Session["Station"].ToString(), out currentStation))
+                {
+                    int summaryStation;
+                    if (map.ContainsKey("station") &&
+                        TryParseIntToken(map["station"], out summaryStation) &&
+                        summaryStation != currentStation)
+                    {
+                        HttpContext.Current.Session["Shower_Calibration_Summary_Stamp"] = stamp;
+                        AppendMonitoringLog("monitoring_warnings.log", "WARN",
+                            "Ignored calibration summary due to station mismatch. summary_station=" + summaryStation + ", current_station=" + currentStation + ".");
+                        return;
+                    }
+                }
+
+                bool appliedAny = false;
+                float value;
+
+                if (TryGetSummaryFloat(map, "offset1", out value))
+                {
+                    HttpContext.Current.Session["Shower_off1"] = FormatSessionFloat(value);
+                    appliedAny = true;
+                }
+                if (TryGetSummaryFloat(map, "offset2", out value))
+                {
+                    HttpContext.Current.Session["Shower_off2"] = FormatSessionFloat(value);
+                    appliedAny = true;
+                }
+                if (TryGetSummaryFloat(map, "offset3", out value))
+                {
+                    HttpContext.Current.Session["Shower_off3"] = FormatSessionFloat(value);
+                    appliedAny = true;
+                }
+
+                if (TryGetSummaryFloat(map, "peak1", out value))
+                {
+                    HttpContext.Current.Session["Shower_peak1"] = FormatSessionFloat(value);
+                    appliedAny = true;
+                }
+                if (TryGetSummaryFloat(map, "peak2", out value))
+                {
+                    HttpContext.Current.Session["Shower_peak2"] = FormatSessionFloat(value);
+                    appliedAny = true;
+                }
+                if (TryGetSummaryFloat(map, "peak3", out value))
+                {
+                    HttpContext.Current.Session["Shower_peak3"] = FormatSessionFloat(value);
+                    appliedAny = true;
+                }
+
+                HttpContext.Current.Session["Shower_Calibration_Summary_Stamp"] = stamp;
+                if (appliedAny)
+                {
+                    AppendMonitoringLog("monitoring_warnings.log", "INFO",
+                        "Applied calibration summary values from last_calibration_summary.txt.");
+                }
+                else
+                {
+                    AppendMonitoringLog("monitoring_warnings.log", "WARN",
+                        "Calibration summary found but no valid values were applied.");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendMonitoringLog("monitoring_errors.log", "ERROR", "Failed to apply calibration summary.", ex);
+            }
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             HttpContext.Current.Session["ReadAll"] = 0;// use 1 to read  all previous files and save them in D:Save_Pulses_Showers_Rec
@@ -343,6 +460,7 @@ namespace WebApplication2
             if (HttpContext.Current.Session["Event_Zenith"] == null) HttpContext.Current.Session["Event_Zenith"] = "-";
             if (HttpContext.Current.Session["Event_Azimuth"] == null) HttpContext.Current.Session["Event_Azimuth"] = "-";
             HttpContext.Current.Session["Shower_Current_File"] = "nofile";
+            ApplyCalibrationSummaryIfNew();
 
             if (!IsPostBack)
             {
