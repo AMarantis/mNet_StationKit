@@ -214,12 +214,22 @@ Monitoring URL: `http://localhost:8080/`
   - **MIP mean peak 1, 2, 3** (μέσα ύψη παλμού για κάθε ανιχνευτή)
   - **Timing Offset 1, 2** (offset timings)
 
+Επιπλέον, όταν κάνεις **STOP** και στα δύο sub-tabs (Detector Response και Synchronization), το monitoring site γράφει ένα συνοπτικό αρχείο με τα τελευταία calibration αποτελέσματα:
+
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\last_calibration_summary.txt`
+
+Το αρχείο αυτό είναι ένα “latest summary” (ενημερώνεται/αντικαθίσταται σε κάθε ολοκλήρωση calibration) και είναι χρήσιμο για να μη χρειάζεται να κρατάς χειροκίνητα τιμές από screenshots.
+
 ### 6.4 Πού αποθηκεύονται τα αρχεία του Calibration (paths)
 
 Raw outputs (ανά session) γράφονται εδώ:
 
 - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\`
   - `calibration_<SessionId>_<Station>_<YYYY_M_D_H_m_s>\`
+
+Το συνοπτικό “latest summary” αρχείο (ανεξάρτητο από session folder) γράφεται εδώ:
+
+- `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\last_calibration_summary.txt`
 
 Στον παραπάνω φάκελο θα δεις συνήθως:
 
@@ -242,9 +252,9 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Σημείωση (σημαντικό για αργότερα):
 
-- Κράτα κάπου (π.χ. σε σημείωση / screenshot) τις τιμές:
-  - **Timing Offset 1 & 2**
-  - **MIP mean peak 1–3**
+- Οι τιμές **Timing Offset 1 & 2** και **MIP mean peak 1–3** γράφονται αυτόματα στο:
+  - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\last_calibration_summary.txt`
+- Αν θες, κράτα και ένα screenshot σαν “human-readable” αναφορά, αλλά δεν είναι πλέον απαραίτητο.
 - Θα τις χρειαστείς στο **Online Monitoring → Telescope Parameters** στο βήμα **7.2**.
 - Αν αλλάξεις tab / κάνεις refresh, είναι πιθανό τα plots του Calibration να “χαθούν” από το UI.
   - Μπορείς να τα ξαναβρείς από τις εικόνες που παράγονται:
