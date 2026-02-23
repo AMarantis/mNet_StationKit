@@ -45,6 +45,10 @@ payload/**/Debug/**/*.tlog/**
 payload/**/Debug/**/*.exe.recipe
 payload/**/Debug/**/*FileListAbsolute.txt
 
+# Monitoring build intermediates (do not commit)
+payload/**/obj/
+payload/**/obj/**
+
 # Large/offline dependencies should NOT be committed
 deps/root/*
 !deps/root/README.txt

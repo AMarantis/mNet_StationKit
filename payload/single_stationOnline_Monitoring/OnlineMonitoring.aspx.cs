@@ -222,9 +222,9 @@ namespace WebApplication2
                     int idx = line.IndexOf('=');
                     if (idx <= 0 || idx >= line.Length - 1) continue;
                     string key = line.Substring(0, idx).Trim();
-                    string value = line.Substring(idx + 1).Trim();
+                    string textValue = line.Substring(idx + 1).Trim();
                     if (key == string.Empty) continue;
-                    map[key] = value;
+                    map[key] = textValue;
                 }
 
                 int currentStation;
