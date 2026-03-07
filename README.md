@@ -16,8 +16,7 @@ This kit is designed for **Windows 11 Home** school laptops and “USB-first” 
 
 - Starts the monitoring website using **IIS Express** (not Windows IIS).
 - Runs the existing ROOT macros for plots (via `root.exe -b -q ...`).
-- Deploys the prebuilt DAQ executables into the expected data folders (`D:\Save_Pulses_*`) so the DAQ behaves “as it does today”.
-- Avoids USB write latency by allowing a small local cache on `C:` when needed.
+- Deploys the prebuilt DAQ executables into the kit spool data folders (`<kit>\mNetSpool\Save_Pulses_*`).
 
 ## Folder structure
 
@@ -83,17 +82,15 @@ You can also edit `config/station.json` → `downloads.*` URLs to match your env
 
 ## Data paths (important)
 
-The existing monitoring code expects `D:\Save_Pulses_*`.
+The kit uses a single spool root (configured via `config/station.json` → `spoolPath`), by default:
 
-- If the station already has a real `D:` (e.g. “Virtual_D”), the kit uses it.
-- Otherwise it creates a virtual `D:` mapping to the configured spool folder:
-  - By default: `<kit>\mNetSpool` (i.e. alongside the kit folder on the USB)
+- `<kit>\mNetSpool`
 
 Expected folders:
 
-- `D:\Save_Pulses_Calibration_Phase2\`
-- `D:\Save_Pulses_Showers_Phase2\`
-- `D:\Save_Pulses_Showers_Rec_Phase2\`
+- `<kit>\mNetSpool\Save_Pulses_Calibration_Phase2\`
+- `<kit>\mNetSpool\Save_Pulses_Showers_Phase2\`
+- `<kit>\mNetSpool\Save_Pulses_Showers_Rec_Phase2\`
 
 ## Troubleshooting
 

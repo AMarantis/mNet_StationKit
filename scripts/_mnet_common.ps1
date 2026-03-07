@@ -98,12 +98,9 @@ function Get-MNetConfig {
   $cfg = (Get-Content $cfgPath -Raw | ConvertFrom-Json)
 
   # Resolve spoolPath:
-  # - If it's a relative path, it is interpreted as relative to the kit root (USB folder).
+  # - If it's relative, interpret it relative to the kit root.
   # - If it's absolute, use it as-is.
-  #
-  # Special case:
-  # - If the configured virtual data drive already exists as a real drive (e.g. the USB is D:),
-  #   do not create an (unused) kit-local spool folder. We'll just use the existing drive as the spool root.
+  # StationKit policy: data always lives under spoolPath (no virtual drive mapping).
   $spool = ""
   try { $spool = [string]$cfg.spoolPath } catch {}
   if (-not $spool -or $spool.Trim() -eq "") {
@@ -111,18 +108,20 @@ function Get-MNetConfig {
     try { $cfg.spoolPath = $spool } catch {}
   }
 
-  $driveLetter = ""
-  try { $driveLetter = [string]$cfg.virtualDataDriveLetter } catch {}
-  if (-not $driveLetter -or $driveLetter.Trim() -eq "") { $driveLetter = "D" }
-  $dataDrive = "$driveLetter`:\"
-
+  $resolvedSpool = $spool
   if (-not [System.IO.Path]::IsPathRooted($spool)) {
-    if (Test-Path $dataDrive) {
-      try { $cfg.spoolPath = $dataDrive } catch {}
-    } else {
-      try { $cfg.spoolPath = (Join-Path $kitRoot $spool) } catch {}
-    }
+    $resolvedSpool = Join-Path $kitRoot $spool
   }
+  try { $cfg.spoolPath = $resolvedSpool } catch {}
+
+  # Keep this field populated for backward-compatibility/logging.
+  try {
+    $qual = Split-Path -Path $resolvedSpool -Qualifier
+    if ($qual -and $qual.Trim() -ne "") {
+      $letter = $qual.Trim().TrimEnd("\").TrimEnd(":")
+      if ($letter -and $letter -ne "") { $cfg.virtualDataDriveLetter = $letter }
+    }
+  } catch {}
 
   return $cfg
 }
@@ -208,21 +207,7 @@ function Ensure-SubstDrive {
   )
 
   Ensure-Directory -Path $TargetPath
-
-  $drive = "$DriveLetter`:\"
-  $existing = (subst | Select-String -Pattern ("^" + [regex]::Escape($drive)))
-  if ($existing) {
-    return
-  }
-
-  # If the drive exists as a real drive (e.g. a pre-created Virtual_D (D:) volume),
-  # don't fail. We'll just use it and skip subst.
-  if (Test-Path $drive) {
-    Write-Host "Drive $drive already exists; skipping subst and using the existing drive."
-    return
-  }
-
-  cmd.exe /c "subst $DriveLetter`: `"$TargetPath`"" | Out-Null
+  Write-Host "Virtual drive mapping disabled. Using data root: $TargetPath"
 }
 
 function Get-IisExpressExe {

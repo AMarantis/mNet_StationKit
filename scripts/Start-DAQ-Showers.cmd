@@ -2,5 +2,11 @@
 setlocal
 cd /d "%~dp0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start-DAQ-Showers.ps1"
-exit /b %ERRORLEVEL%
+set "ec=%ERRORLEVEL%"
+if not "%ec%"=="0" (
+  echo.
+  echo [ERROR] Start-DAQ-Showers failed with exit code %ec%.
+  pause
+)
+exit /b %ec%
 

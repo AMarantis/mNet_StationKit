@@ -47,7 +47,7 @@
 ## Τι ελέγχουμε όταν συμβεί
 
 - Επιβεβαίωση ότι ο DAQ συνεχίζει:
-  - `D:\Save_Pulses_Showers_Phase2\*.showerdata`
+  - `<kit>\mNetSpool\Save_Pulses_Showers_Phase2\*.showerdata`
 - Logs monitoring:
   - `X:\mNetStationKit\logs\monitoring_errors.log`
   - `X:\mNetStationKit\logs\monitoring_warnings.log`

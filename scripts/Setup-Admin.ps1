@@ -12,16 +12,19 @@ if (-not (Test-Path $kitRoot)) { throw "Kit folder not found at '$kitRoot'." }
 $spool = $cfg.spoolPath
 Ensure-Directory -Path $spool
 
-# Create virtual data drive (D:) pointing to the configured spool folder (default: <kit>\mNetSpool on the USB)
-$driveLetter = $cfg.virtualDataDriveLetter
-Ensure-SubstDrive -DriveLetter $driveLetter -TargetPath $spool
+# StationKit runs in spool-only mode (no virtual drives).
+Ensure-SubstDrive -DriveLetter $cfg.virtualDataDriveLetter -TargetPath $spool
+
+$calibrationDir = Join-Path $spool "Save_Pulses_Calibration_Phase2"
+$showersDir = Join-Path $spool "Save_Pulses_Showers_Phase2"
+$showersRecDir = Join-Path $spool "Save_Pulses_Showers_Rec_Phase2"
 
 # Create expected data folders
-Ensure-Directory -Path "$driveLetter`:\Save_Pulses_Calibration_Phase2"
-Ensure-Directory -Path "$driveLetter`:\Save_Pulses_Showers_Phase2"
-Ensure-Directory -Path "$driveLetter`:\Save_Pulses_Showers_Rec_Phase2"
+Ensure-Directory -Path $calibrationDir
+Ensure-Directory -Path $showersDir
+Ensure-Directory -Path $showersRecDir
 
-# Deploy DAQ runtimes into the D: data folders (so the DAQ writes data where monitoring expects it).
+# Deploy DAQ runtimes into the spool data folders (so the DAQ writes data where monitoring expects it).
 $calibProject = Get-PayloadOrRepoPath -Config $cfg -RepoRelativePath "DAQ mNet/single_station_DAQ_calibration" -PayloadSubPath "single_station_DAQ_calibration"
 $showersProject = Get-PayloadOrRepoPath -Config $cfg -RepoRelativePath "DAQ mNet/single_station_DAQ_showers" -PayloadSubPath "single_station_DAQ_showers"
 
@@ -34,11 +37,11 @@ if (-not (Test-Path $showersDebug)) { throw "Missing showers Debug folder at '$s
 $excludeFiles = @("*.pch","*.pdb","*.idb","*.ilk","*.bsc","*.log","*.tlog","*.obj","*.sbr","*.res","*.recipe","*.FileListAbsolute.txt","*.showerdata","*.data")
 $excludeDirs = @("VCDSO.tlog",".vs")
 
-Write-Host "Deploying Calibration DAQ runtime to $driveLetter`:\Save_Pulses_Calibration_Phase2 ..."
-Copy-DirRobocopy -Source $calibDebug -Destination "$driveLetter`:\Save_Pulses_Calibration_Phase2" -ExcludeFiles $excludeFiles -ExcludeDirs $excludeDirs
+Write-Host "Deploying Calibration DAQ runtime to $calibrationDir ..."
+Copy-DirRobocopy -Source $calibDebug -Destination $calibrationDir -ExcludeFiles $excludeFiles -ExcludeDirs $excludeDirs
 
-Write-Host "Deploying Showers DAQ runtime to $driveLetter`:\Save_Pulses_Showers_Phase2 ..."
-Copy-DirRobocopy -Source $showersDebug -Destination "$driveLetter`:\Save_Pulses_Showers_Phase2" -ExcludeFiles $excludeFiles -ExcludeDirs $excludeDirs
+Write-Host "Deploying Showers DAQ runtime to $showersDir ..."
+Copy-DirRobocopy -Source $showersDebug -Destination $showersDir -ExcludeFiles $excludeFiles -ExcludeDirs $excludeDirs
 
 # Validate monitoring site exists
 $monitoringSite = Get-PayloadOrRepoPath -Config $cfg -RepoRelativePath "DAQ mNet/single_stationOnline_Monitoring" -PayloadSubPath "single_stationOnline_Monitoring"

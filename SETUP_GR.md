@@ -126,16 +126,14 @@ Monitoring URL: `http://localhost:8080/`
 
 Αυτό κάνει:
 
-- Αν **δεν** υπάρχει πραγματικό `D:`, φτιάχνει spool folder **στο USB** (μέσα στο kit): `X:\mNetStationKit\mNetSpool\`
-- Εξασφαλίζει ότι υπάρχει `D:` για τα data paths:
-  - Στον οδηγό, το `D:` είναι το “data drive” που περιμένει ο DAQ κώδικας (μπορεί να είναι πραγματικός δίσκος ή virtual drive μέσω `subst`).
-  - Αν υπάρχει ήδη πραγματικό `D:` (π.χ. “Virtual_D”), το χρησιμοποιεί.
-  - Αλλιώς δημιουργεί “virtual D:” με `subst` που δείχνει στο USB spool folder (π.χ. `X:\mNetStationKit\mNetSpool\`).
+- Φτιάχνει (ή χρησιμοποιεί) spool folder **εκεί που ζει το kit**:
+  - συνήθως: `X:\mNetStationKit\mNetSpool\`
+  - αν το kit τρέχει από local disk: π.χ. `C:\mNetStationKit\mNetSpool\`
 - Φτιάχνει τους φακέλους δεδομένων:
-  - `D:\Save_Pulses_Calibration_Phase2\`
-  - `D:\Save_Pulses_Showers_Phase2\`
-  - `D:\Save_Pulses_Showers_Rec_Phase2\`
-- Αντιγράφει τα προ‑compiled DAQ αρχεία μέσα στα `D:\Save_Pulses_*` (για να γράφει εκεί που περιμένει ο κώδικας)
+  - `<spool>\Save_Pulses_Calibration_Phase2\`
+  - `<spool>\Save_Pulses_Showers_Phase2\`
+  - `<spool>\Save_Pulses_Showers_Rec_Phase2\`
+- Αντιγράφει τα προ‑compiled DAQ αρχεία μέσα στα `Save_Pulses_*` του spool (για να γράφει εκεί ο DAQ)
 
 ### 4.1 (Προαιρετικό αλλά προτείνεται) Φτιάξε “κουμπιά” στο Desktop
 
@@ -171,7 +169,8 @@ Monitoring URL: `http://localhost:8080/`
 
 Έλεγχος ότι “γράφει”:
 
-- Μπες στο `D:\Save_Pulses_Calibration_Phase2\`
+- Μπες στο `X:\mNetStationKit\mNetSpool\Save_Pulses_Calibration_Phase2\`  
+  (ή στο αντίστοιχο `<spool>\Save_Pulses_Calibration_Phase2\` αν το kit δεν είναι σε USB)
 - Πρέπει να εμφανίζονται αρχεία τύπου:
   - `detectorid_year_month_day_hour.data`
 
@@ -288,7 +287,8 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Έλεγχος ότι “γράφει”:
 
-- Μπες στο `D:\Save_Pulses_Showers_Phase2\`
+- Μπες στο `X:\mNetStationKit\mNetSpool\Save_Pulses_Showers_Phase2\`  
+  (ή στο αντίστοιχο `<spool>\Save_Pulses_Showers_Phase2\` αν το kit δεν είναι σε USB)
 - Πρέπει να εμφανίζονται αρχεία τύπου:
   - `detectorid_year_month_day_hour.showerdata`
 
@@ -324,7 +324,8 @@ Raw outputs (ανά session) γράφονται εδώ:
 
 Reconstructed events μπορεί να γράφονται και στο:
 
-- `D:\Save_Pulses_Showers_Rec_Phase2\`
+- `X:\mNetStationKit\mNetSpool\Save_Pulses_Showers_Rec_Phase2\`  
+  (ή στο αντίστοιχο `<spool>\Save_Pulses_Showers_Rec_Phase2\`)
   - `events_<Station>_<YYYY>_<M>_<D>_<H>*`
 
 ### 7.4 Πώς σταματάς τα showers και πώς “κλείνεις” το UI
@@ -357,16 +358,15 @@ Reconstructed events μπορεί να γράφονται και στο:
 
 ## Σημαντικές παρατηρήσεις / κοινά προβλήματα
 
-### A) USB + Virtual D: μετά από reboot
+### A) Data path / spool folder
 
-- Το “virtual D:” από `subst` μπορεί να χαθεί μετά από restart.
-- Αν συμβεί:
-  - απλά πάτα `Start-Monitoring.cmd` ή `Start-DAQ-Calibration.cmd` ή `Start-DAQ-Showers.cmd` (τα scripts ξαναφτιάχνουν το D: όταν λείπει).
+- Το kit **δεν χρησιμοποιεί virtual drive**. Τα data γράφονται στο spool (`mNetSpool`) μέσα στο kit folder.
+- Αν δεν βλέπεις νέα αρχεία:
   - έλεγξε ότι υπάρχουν οι φάκελοι:
-    - `D:\Save_Pulses_Calibration_Phase2\`
-    - `D:\Save_Pulses_Showers_Phase2\`
-    - `D:\Save_Pulses_Showers_Rec_Phase2\`
-  - αν το D: δεν εμφανιστεί/δεν φτιαχτούν οι φάκελοι, τρέξε `Setup-Admin.cmd` ως Admin και ξαναδοκίμασε.
+    - `<spool>\Save_Pulses_Calibration_Phase2\`
+    - `<spool>\Save_Pulses_Showers_Phase2\`
+    - `<spool>\Save_Pulses_Showers_Rec_Phase2\`
+  - αν λείπουν, τρέξε `Setup-Admin.cmd` ως Admin και ξαναδοκίμασε.
 
 ### B) Μην τρέχει calibration και showers μαζί
 

@@ -6,7 +6,7 @@ $spool = $cfg.spoolPath
 Ensure-Directory -Path $spool
 Ensure-SubstDrive -DriveLetter $cfg.virtualDataDriveLetter -TargetPath $spool
 
-$outDir = "$($cfg.virtualDataDriveLetter):\Save_Pulses_Showers_Phase2"
+$outDir = Join-Path $spool "Save_Pulses_Showers_Phase2"
 Ensure-Directory -Path $outDir
 
 $exe = Join-Path $outDir "VCDSO.exe"

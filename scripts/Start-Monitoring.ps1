@@ -27,6 +27,7 @@ if (-not $cppOk) {
 
 # IIS Express runs as the current user; child cmd processes inherit env vars.
 $env:MNET_ROOT_EXE = $rootExe
+$env:MNET_DATA_ROOT = $spool
 
 $port = [int]$cfg.monitoringPort
 

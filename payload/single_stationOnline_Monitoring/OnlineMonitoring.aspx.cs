@@ -72,6 +72,33 @@ namespace WebApplication2
             }
         }
 
+        private string GetConfiguredDataRoot()
+        {
+            string fromEnv = Environment.GetEnvironmentVariable("MNET_DATA_ROOT");
+            if (!string.IsNullOrWhiteSpace(fromEnv))
+            {
+                string candidate = fromEnv.Trim().TrimEnd('\\');
+                if (Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            string webRoot = Server.MapPath("~");
+            if (!string.IsNullOrWhiteSpace(webRoot))
+            {
+                string kitRoot = Path.GetFullPath(Path.Combine(webRoot, "..", ".."));
+                string spool = Path.Combine(kitRoot, "mNetSpool");
+                if (!Directory.Exists(spool))
+                {
+                    Directory.CreateDirectory(spool);
+                }
+                return spool;
+            }
+
+            return @"C:\mNetStationKit\mNetSpool";
+        }
+
         private bool TryParseFloatToken(string token, out float value)
         {
             token = (token ?? string.Empty).Trim();
@@ -622,7 +649,7 @@ namespace WebApplication2
                     }
                 }
                 filename = Hantek + "_" + myYear.ToString() + "_" + myMonth.ToString() + "_" + myDay.ToString() + "_" + myHour.ToString() + ".showerdata";
-                string strRootRelativePathName1 = @"D:\Save_Pulses_Showers_Phase2\" + filename;
+                string strRootRelativePathName1 = Path.Combine(GetConfiguredDataRoot(), "Save_Pulses_Showers_Phase2", filename);
                 while (!File.Exists(strRootRelativePathName1))
                 {
                     myHour++;
@@ -630,7 +657,7 @@ namespace WebApplication2
                     if (myDay == 32) { myDay = 1; myMonth++; }
                     if (myMonth == 13) { myMonth = 1; myYear++; }
                     filename = Hantek + "_" + myYear.ToString() + "_" + myMonth.ToString() + "_" + myDay.ToString() + "_" + myHour.ToString() + ".showerdata";
-                    strRootRelativePathName1 = @"D:\Save_Pulses_Showers_Phase2\" + filename;
+                    strRootRelativePathName1 = Path.Combine(GetConfiguredDataRoot(), "Save_Pulses_Showers_Phase2", filename);
                     if(myYear>2025)
                     {
                         return false;
@@ -642,7 +669,11 @@ namespace WebApplication2
                 eventTime[2] = myDay;
                 eventTime[3] = myHour;
                 HttpContext.Current.Session["EventTime"] = eventTime;
-                HttpContext.Current.Session["SaveFile"] = @"D:\Save_Pulses_Showers_Rec_Phase2\events_" + HttpContext.Current.Session["Station"].ToString() + "_" + myYear.ToString() + "_" + myMonth.ToString() + "_" + myDay.ToString() + "_" + myHour.ToString();
+                HttpContext.Current.Session["SaveFile"] = Path.Combine(
+                    GetConfiguredDataRoot(),
+                    "Save_Pulses_Showers_Rec_Phase2",
+                    "events_" + HttpContext.Current.Session["Station"].ToString() + "_" + myYear.ToString() + "_" + myMonth.ToString() + "_" + myDay.ToString() + "_" + myHour.ToString()
+                );
                 //HttpContext.Current.Session["SaveFile"] = @"D:\tmp\events_" + HttpContext.Current.Session["Station"].ToString() + "_" + myYear.ToString() + "_" + myMonth.ToString() + "_" + myDay.ToString() + "_" + myHour.ToString();
                 myHour++;
                 if (myHour == 24) { myHour = 0; myDay++; }
@@ -658,7 +689,7 @@ namespace WebApplication2
                 return true;
             }
 
-            string strRootRelativePathName = @"D:\Save_Pulses_Showers_Phase2\" + filename;
+            string strRootRelativePathName = Path.Combine(GetConfiguredDataRoot(), "Save_Pulses_Showers_Phase2", filename);
             bool filechanged = false;
             if (File.Exists(strRootRelativePathName))
             {

@@ -18,6 +18,34 @@ namespace WebApplication2
     {
         static int ic = 0;
         // static public StreamReader rs=null;
+
+        private string GetConfiguredDataRoot()
+        {
+            string fromEnv = Environment.GetEnvironmentVariable("MNET_DATA_ROOT");
+            if (!string.IsNullOrWhiteSpace(fromEnv))
+            {
+                string candidate = fromEnv.Trim().TrimEnd('\\');
+                if (Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            string webRoot = Server.MapPath("~");
+            if (!string.IsNullOrWhiteSpace(webRoot))
+            {
+                string kitRoot = Path.GetFullPath(Path.Combine(webRoot, "..", ".."));
+                string spool = Path.Combine(kitRoot, "mNetSpool");
+                if (!Directory.Exists(spool))
+                {
+                    Directory.CreateDirectory(spool);
+                }
+                return spool;
+            }
+
+            return @"C:\mNetStationKit\mNetSpool";
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             //HtmlAnchor HA = new HtmlAnchor();
@@ -503,7 +531,7 @@ namespace WebApplication2
             if (HttpContext.Current.Session["ReadAll"].ToString() == "1") filename = Hantek + "_" + lt.Year.ToString() + "_" + lt.Month.ToString() + "_" +  "0_"  + "0.data";
 
             //string strRootRelativePathName = Server.MapPath(@"~\ProgramFiles\Save_Pulses_Calibration\" + filename);
-            string strRootRelativePathName = @"D:\Save_Pulses_Calibration_Phase2\" + filename;
+            string strRootRelativePathName = Path.Combine(GetConfiguredDataRoot(), "Save_Pulses_Calibration_Phase2", filename);
             if (File.Exists(strRootRelativePathName))
             {
                 var file = new FileStream(strRootRelativePathName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
