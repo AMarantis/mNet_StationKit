@@ -8,11 +8,13 @@ Ensure-SubstDrive -DriveLetter $cfg.virtualDataDriveLetter -TargetPath $spool
 
 $outDir = Join-Path $spool "Save_Pulses_Calibration_Phase2"
 Ensure-Directory -Path $outDir
+Unblock-PathFiles -Path $outDir
 
 $exe = Join-Path $outDir "VCDSO.exe"
 if (-not (Test-Path $exe)) {
   throw "Calibration DAQ executable not found at '$exe'. Run Setup-Admin.cmd to deploy the DAQ runtime first."
 }
+Unblock-PathFiles -Path $exe
 
 Get-Process -Name "VCDSO" -ErrorAction SilentlyContinue | ForEach-Object {
   try {

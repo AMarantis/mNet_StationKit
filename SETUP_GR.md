@@ -38,6 +38,7 @@ Monitoring URL: `http://localhost:8080/`
 1. Κατέβασε από το GitHub **μόνο** το αρχείο `mNetStationKit.zip` (δεν χρειάζεται να κατεβάσεις όλο το repo):
    - `https://github.com/AMarantis/mNet_StationKit/blob/main/mNetStationKit.zip`
    - (Στο GitHub θα ανοίξει σελίδα αρχείου· πάτα **Download** / **Download raw file** για να κατέβει το `.zip`.)
+1.5 (Προτείνεται) Πριν το extract: δεξί κλικ στο `mNetStationKit.zip` → **Properties** → αν υπάρχει επιλογή **Unblock (Κατάργηση αποκλεισμού)**, ενεργοποίησέ την και πάτα **OK**.
 2. Κάνε extract **στο root** του USB, ώστε να καταλήξεις σε έναν φάκελο:
    - `X:\mNetStationKit\`
    που μέσα του έχει:
@@ -55,6 +56,7 @@ Monitoring URL: `http://localhost:8080/`
     - κάνε extract ξανά στο **root** του USB, ή
     - μετέφερε τον “εσωτερικό” φάκελο `mNetStationKit` ένα επίπεδο πάνω.
 - Σε κάθε περίπτωση, στο τέλος πρέπει να έχεις **ακριβώς** έναν φάκελο `X:\mNetStationKit\` που μέσα του έχει τους επιμέρους φακέλους `config/`, `deps/`, `payload/`, `scripts/`.
+- Αν εμφανιστεί SmartScreen σε `VCDSO.exe`, πάτα **Περισσότερες πληροφορίες** → **Εκτέλεση ούτως ή άλλως** μία φορά.
 
 ---
 

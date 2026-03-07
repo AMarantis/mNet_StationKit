@@ -86,3 +86,18 @@
 
 - Τιμές τύπου `9999` / `-9999` (και γενικά `abs(value) >= 9000`) θεωρούνται invalid και αγνοούνται από τον υπολογισμό means.
 - Αν το summary δεν έχει έγκυρες τιμές, δεν σπάει το UI· κρατούνται defaults/session values και γράφεται warning log.
+
+---
+
+## SmartScreen block σε `VCDSO.exe` / scripts
+
+### Συμπτώματα
+
+- Μήνυμα Windows: “Τα Windows προστάτευσαν τον υπολογιστή σας”.
+- Σε script launch μπορεί να εμφανιστεί `Start-Process ... Η λειτουργία ακυρώθηκε από το χρήστη`.
+
+### Τι κάνουμε
+
+- Στο prompt πάτα: **Περισσότερες πληροφορίες** → **Εκτέλεση ούτως ή άλλως**.
+- Αν επιμένει, τρέξε PowerShell ως Admin και κάνε:
+  - `Get-ChildItem "C:\mNetStationKit" -Recurse -File | Unblock-File`

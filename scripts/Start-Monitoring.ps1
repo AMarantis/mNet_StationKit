@@ -11,6 +11,9 @@ $rootExe = Get-RootExe -Config $cfg
 $iisExpress = Get-IisExpressExe -Config $cfg
 
 $sitePath = Get-PayloadOrRepoPath -Config $cfg -RepoRelativePath "DAQ mNet/single_stationOnline_Monitoring" -PayloadSubPath "single_stationOnline_Monitoring"
+Unblock-PathFiles -Path $sitePath
+Unblock-PathFiles -Path $rootExe
+Unblock-PathFiles -Path $iisExpress
 
 # ROOT macros are compiled by Cling and typically need MSVC headers/SDK on Windows.
 # Try to import the Visual Studio Developer Command Prompt environment so root.exe can find <new>, etc.

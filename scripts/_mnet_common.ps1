@@ -200,6 +200,28 @@ function Ensure-Directory {
   }
 }
 
+function Unblock-PathFiles {
+  param([Parameter(Mandatory=$true)][string]$Path)
+
+  if (-not (Test-Path $Path)) { return }
+
+  $files = @()
+  $item = Get-Item -LiteralPath $Path -ErrorAction SilentlyContinue
+  if ($null -eq $item) { return }
+
+  if ($item.PSIsContainer) {
+    $files = Get-ChildItem -LiteralPath $Path -Recurse -File -ErrorAction SilentlyContinue
+  } else {
+    $files = @($item)
+  }
+
+  foreach ($f in $files) {
+    try {
+      Unblock-File -LiteralPath $f.FullName -ErrorAction SilentlyContinue
+    } catch {}
+  }
+}
+
 function Ensure-SubstDrive {
   param(
     [Parameter(Mandatory=$true)][string]$DriveLetter,

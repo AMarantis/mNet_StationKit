@@ -12,6 +12,9 @@ if (-not (Test-Path $kitRoot)) { throw "Kit folder not found at '$kitRoot'." }
 $spool = $cfg.spoolPath
 Ensure-Directory -Path $spool
 
+Write-Host "Unblocking downloaded files under kit path (best-effort)..."
+Unblock-PathFiles -Path $kitRoot
+
 # StationKit runs in spool-only mode (no virtual drives).
 Ensure-SubstDrive -DriveLetter $cfg.virtualDataDriveLetter -TargetPath $spool
 
@@ -39,9 +42,11 @@ $excludeDirs = @("VCDSO.tlog",".vs")
 
 Write-Host "Deploying Calibration DAQ runtime to $calibrationDir ..."
 Copy-DirRobocopy -Source $calibDebug -Destination $calibrationDir -ExcludeFiles $excludeFiles -ExcludeDirs $excludeDirs
+Unblock-PathFiles -Path $calibrationDir
 
 Write-Host "Deploying Showers DAQ runtime to $showersDir ..."
 Copy-DirRobocopy -Source $showersDebug -Destination $showersDir -ExcludeFiles $excludeFiles -ExcludeDirs $excludeDirs
+Unblock-PathFiles -Path $showersDir
 
 # Validate monitoring site exists
 $monitoringSite = Get-PayloadOrRepoPath -Config $cfg -RepoRelativePath "DAQ mNet/single_stationOnline_Monitoring" -PayloadSubPath "single_stationOnline_Monitoring"
