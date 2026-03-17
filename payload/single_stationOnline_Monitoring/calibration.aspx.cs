@@ -16,8 +16,49 @@ namespace WebApplication2
 {
     public partial class WebForm1 : System.Web.UI.Page
     {
+        private const long CalibrationEventBytes = 5050;
+        private const int CalibrationDefaultIntervalMs = 90000;
+        private const int CalibrationFastStartIntervalMs = 1000;
         static int ic = 0;
         // static public StreamReader rs=null;
+
+        private bool IsReadAllMode()
+        {
+            return HttpContext.Current.Session["ReadAll"] != null && HttpContext.Current.Session["ReadAll"].ToString() == "1";
+        }
+
+        private void SafeSeekReader(StreamReader reader, long absolutePosition)
+        {
+            if (reader == null) return;
+            if (absolutePosition < 0) absolutePosition = 0;
+            reader.DiscardBufferedData();
+            reader.BaseStream.Seek(absolutePosition, SeekOrigin.Begin);
+        }
+
+        private void AlignToLastCompletedCalibrationEvent(StreamReader reader)
+        {
+            if (reader == null) return;
+            reader.DiscardBufferedData();
+            reader.BaseStream.Seek(0, SeekOrigin.End);
+            long endPos = reader.BaseStream.Position;
+            long alignedPos = endPos - (endPos % CalibrationEventBytes);
+            reader.DiscardBufferedData();
+            reader.BaseStream.Seek(alignedPos, SeekOrigin.Begin);
+        }
+
+        private void EnableCalibrationTimerForImmediateStart()
+        {
+            if (IsReadAllMode()) return;
+            HttpContext.Current.Session["Calibration_FastStartPending"] = "1";
+            Timer1.Interval = CalibrationFastStartIntervalMs;
+            Timer1.Enabled = true;
+        }
+
+        private void RestoreCalibrationTimerDefaults()
+        {
+            HttpContext.Current.Session["Calibration_FastStartPending"] = "0";
+            Timer1.Interval = CalibrationDefaultIntervalMs;
+        }
 
         private string GetConfiguredDataRoot()
         {
@@ -84,6 +125,11 @@ namespace WebApplication2
             if (HttpContext.Current.Session["Calibration_tim2_sync"] == null) HttpContext.Current.Session["Calibration_tim2_sync"] = "5.0";
             if (HttpContext.Current.Session["Calibration_tim3_sync"] == null) HttpContext.Current.Session["Calibration_tim3_sync"] = "5.0";
             if (HttpContext.Current.Session["CFD"] == null) HttpContext.Current.Session["CFD"] = 0; //initial value
+            if (HttpContext.Current.Session["Calibration_FastStartPending"] == null) HttpContext.Current.Session["Calibration_FastStartPending"] = "0";
+
+            Timer1.Interval = HttpContext.Current.Session["Calibration_FastStartPending"].ToString() == "1"
+                ? CalibrationFastStartIntervalMs
+                : CalibrationDefaultIntervalMs;
 
             if (!IsPostBack)
             {
@@ -427,8 +473,8 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Response_Started"] = 1;
             ShowStatusResponse();
 
-            if (HttpContext.Current.Session["ReadAll"].ToString() == "0") this.Timer1.Enabled = true;
-            Read_Events_and_Show_Protected();
+            if (IsReadAllMode()) Read_Events_and_Show_Protected();
+            else EnableCalibrationTimerForImmediateStart();
             //Show_Response_Tab();
         }
 
@@ -513,8 +559,8 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Sync_Started"] = 1;
             ShowStatusSync();
 
-            if (HttpContext.Current.Session["ReadAll"].ToString() == "0") this.Timer1.Enabled = true;
-            Read_Events_and_Show_Protected();
+            if (IsReadAllMode()) Read_Events_and_Show_Protected();
+            else EnableCalibrationTimerForImmediateStart();
             //Show_Sync_Tab();
         }
 
@@ -534,27 +580,26 @@ namespace WebApplication2
             string strRootRelativePathName = Path.Combine(GetConfiguredDataRoot(), "Save_Pulses_Calibration_Phase2", filename);
             if (File.Exists(strRootRelativePathName))
             {
+                StreamReader previousReader = HttpContext.Current.Session["Calibration_rs"] as StreamReader;
+                if (previousReader != null)
+                {
+                    try
+                    {
+                        previousReader.Close();
+                    }
+                    catch
+                    {
+                        ;
+                    }
+                }
+
                 var file = new FileStream(strRootRelativePathName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 StreamReader rs = new StreamReader(file);
                 HttpContext.Current.Session["Calibration_rs"] = rs;
-                {
-                    //rs = File.OpenText(strRootRelativePathName);
-                    //rs.BaseStream.Seek(-4221, SeekOrigin.End);
-                    //return;
-                    rs.ReadToEnd();
-                    long pos = rs.BaseStream.Position;
-                    decimal events = (pos / 5050) - System.Math.Floor((decimal)(pos / 5050));
-                    if (events > 0)
-                    {
-                        long p = (long)System.Math.Floor((decimal)(pos / 5050));
-                        rs.BaseStream.Seek(p, SeekOrigin.Begin);
-                    }
-                    if (HttpContext.Current.Session["ReadAll"].ToString() == "1") rs.BaseStream.Seek(0, SeekOrigin.Begin);
-                    // string line = rs.ReadLine();
-                    // long kkk=rs.BaseStream.Seek(-2, SeekOrigin.End);
-                    // line = rs.ReadLine();
-                }
+                if (IsReadAllMode()) SafeSeekReader(rs, 0);
+                else AlignToLastCompletedCalibrationEvent(rs);
             }
+            else HttpContext.Current.Session["Calibration_rs"] = null;
 
             //pulselastfile = fopen(filename, "a");
         }
@@ -659,8 +704,8 @@ namespace WebApplication2
             float[] peak = new float[4] { -1, -1, -1, 1 };
             float[] vflag = new float[4] { -1, -1, -1, 1 };
             long record = rs.BaseStream.Length - rs.BaseStream.Position;
-            float events = record / 5050;
-            if (record < 5050) //this will update the file if the hour is changed?
+            float events = record / CalibrationEventBytes;
+            if (record < CalibrationEventBytes) //this will update the file if the hour is changed?
             {
                 Set_File_Position();
                 return;
@@ -860,7 +905,7 @@ namespace WebApplication2
 
                         if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
                         {
-                            rs.BaseStream.Seek(this_event_start + 5050, SeekOrigin.Begin);
+                            SafeSeekReader(rs, this_event_start + CalibrationEventBytes);
                         }
                         else throw;
                     }
@@ -1036,11 +1081,11 @@ namespace WebApplication2
             }
             catch (Exception)
             {
-                long record = rs.BaseStream.Length - (pos + 5050);
-                if (record > 5050)
-                    rs.BaseStream.Seek(pos + 5050, SeekOrigin.Begin);
+                long record = rs.BaseStream.Length - (pos + CalibrationEventBytes);
+                if (record > CalibrationEventBytes)
+                    SafeSeekReader(rs, pos + CalibrationEventBytes);
                 else
-                    rs.BaseStream.Seek(pos, SeekOrigin.Begin);
+                    SafeSeekReader(rs, pos);
                 //throw;
                 if(IsResponseStarted=="1") //Read_Events_and_Show changes the session variable in case of failure. Catch the failure and revert
                 HttpContext.Current.Session["Calibration_Response_Started"] = 1;
@@ -1168,8 +1213,15 @@ namespace WebApplication2
             //Timer1.Enabled = false;
             //Timer1.Interval=9999999;
             Read_Events_and_Show_Protected();
+            if (HttpContext.Current.Session["Calibration_FastStartPending"] != null &&
+                HttpContext.Current.Session["Calibration_FastStartPending"].ToString() == "1")
+            {
+                RestoreCalibrationTimerDefaults();
+            }
             //Timer1.Interval = 120000;
-            Timer1.Enabled = true;
+            Timer1.Enabled =
+                HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "1" ||
+                HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "1";
             //Show_Response_Tab();
         }
 
@@ -1212,7 +1264,11 @@ namespace WebApplication2
         {
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") return;
             HttpContext.Current.Session["Calibration_Response_Started"] = 0;
-            if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") this.Timer1.Enabled = false;
+            if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0")
+            {
+                RestoreCalibrationTimerDefaults();
+                this.Timer1.Enabled = false;
+            }
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
             ShowStatusResponse();
             ExportCalibrationSummaryIfIdle();
@@ -1222,7 +1278,11 @@ namespace WebApplication2
         {
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") return;
                 HttpContext.Current.Session["Calibration_Sync_Started"] = 0;
-            if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") this.Timer1.Enabled = false;
+            if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0")
+            {
+                RestoreCalibrationTimerDefaults();
+                this.Timer1.Enabled = false;
+            }
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
             ShowStatusSync();
             ExportCalibrationSummaryIfIdle();

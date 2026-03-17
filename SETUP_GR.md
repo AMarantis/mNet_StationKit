@@ -256,6 +256,7 @@ Raw outputs (ανά session) γράφονται εδώ:
 - Οι τιμές **Timing Offset 1 & 2** και **MIP mean peak 1–3** γράφονται αυτόματα στο:
   - `X:\mNetStationKit\payload\single_stationOnline_Monitoring\App_Data\last_calibration_summary.txt`
 - Αν θες, κράτα και ένα screenshot σαν “human-readable” αναφορά, αλλά δεν είναι πλέον απαραίτητο.
+- Το summary είναι reference αρχείο. Στο **Online Monitoring -> Telescope Parameters** περνάς τις τιμές χειροκίνητα.
 - Θα τις χρειαστείς στο **Online Monitoring → Telescope Parameters** στο βήμα **7.2**.
 - Αν αλλάξεις tab / κάνεις refresh, είναι πιθανό τα plots του Calibration να “χαθούν” από το UI.
   - Μπορείς να τα ξαναβρείς από τις εικόνες που παράγονται:

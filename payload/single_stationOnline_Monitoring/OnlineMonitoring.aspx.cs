@@ -113,6 +113,17 @@ namespace WebApplication2
                    int.TryParse(token, NumberStyles.Integer, CultureInfo.CurrentCulture, out value);
         }
 
+        private bool TryGetSessionDouble(string key, out double value)
+        {
+            value = 0.0;
+            if (HttpContext.Current.Session[key] == null) return false;
+
+            float parsed;
+            if (!TryParseFloatToken(HttpContext.Current.Session[key].ToString(), out parsed)) return false;
+            value = parsed;
+            return true;
+        }
+
         private bool TryParseFixedLine4(string line, out float[] values, out string errorReason)
         {
             values = new float[4];
@@ -211,6 +222,11 @@ namespace WebApplication2
             return value.ToString("0.####", CultureInfo.InvariantCulture);
         }
 
+        private string FormatSessionDouble(double value)
+        {
+            return value.ToString("0.####", CultureInfo.InvariantCulture);
+        }
+
         private bool IsInvalidSummaryValue(float value)
         {
             if (float.IsNaN(value) || float.IsInfinity(value)) return true;
@@ -270,56 +286,13 @@ namespace WebApplication2
                     }
                 }
 
-                bool appliedAny = false;
-                float value;
-
-                if (TryGetSummaryFloat(map, "offset1", out value))
-                {
-                    HttpContext.Current.Session["Shower_off1"] = FormatSessionFloat(value);
-                    appliedAny = true;
-                }
-                if (TryGetSummaryFloat(map, "offset2", out value))
-                {
-                    HttpContext.Current.Session["Shower_off2"] = FormatSessionFloat(value);
-                    appliedAny = true;
-                }
-                if (TryGetSummaryFloat(map, "offset3", out value))
-                {
-                    HttpContext.Current.Session["Shower_off3"] = FormatSessionFloat(value);
-                    appliedAny = true;
-                }
-
-                if (TryGetSummaryFloat(map, "peak1", out value))
-                {
-                    HttpContext.Current.Session["Shower_peak1"] = FormatSessionFloat(value);
-                    appliedAny = true;
-                }
-                if (TryGetSummaryFloat(map, "peak2", out value))
-                {
-                    HttpContext.Current.Session["Shower_peak2"] = FormatSessionFloat(value);
-                    appliedAny = true;
-                }
-                if (TryGetSummaryFloat(map, "peak3", out value))
-                {
-                    HttpContext.Current.Session["Shower_peak3"] = FormatSessionFloat(value);
-                    appliedAny = true;
-                }
-
                 HttpContext.Current.Session["Shower_Calibration_Summary_Stamp"] = stamp;
-                if (appliedAny)
-                {
-                    AppendMonitoringLog("monitoring_warnings.log", "INFO",
-                        "Applied calibration summary values from last_calibration_summary.txt.");
-                }
-                else
-                {
-                    AppendMonitoringLog("monitoring_warnings.log", "WARN",
-                        "Calibration summary found but no valid values were applied.");
-                }
+                AppendMonitoringLog("monitoring_warnings.log", "INFO",
+                    "Calibration summary updated. Keep using Telescope Parameters values explicitly entered by the operator.");
             }
             catch (Exception ex)
             {
-                AppendMonitoringLog("monitoring_errors.log", "ERROR", "Failed to apply calibration summary.", ex);
+                AppendMonitoringLog("monitoring_errors.log", "ERROR", "Failed to inspect calibration summary.", ex);
             }
         }
 
@@ -874,18 +847,21 @@ namespace WebApplication2
                 }
                 //else
                 {
-                    double offsetthr1 = Convert.ToDouble(HttpContext.Current.Session["Shower_off1"].ToString());
-                    double offsetthr2 = Convert.ToDouble(HttpContext.Current.Session["Shower_off2"].ToString());
-                    double offsetthr3 = Convert.ToDouble(HttpContext.Current.Session["Shower_off3"].ToString());
+                    double offsetthr1;
+                    double offsetthr2;
+                    double offsetthr3;
+                    if (!TryGetSessionDouble("Shower_off1", out offsetthr1)) offsetthr1 = 0.0;
+                    if (!TryGetSessionDouble("Shower_off2", out offsetthr2)) offsetthr2 = 0.0;
+                    if (!TryGetSessionDouble("Shower_off3", out offsetthr3)) offsetthr3 = 0.0;
 
                     double[,] off = (double[,])(Session["OffValuesCDF"]);
                     int station = (int)(Session["Station"]);
                     double offset1 = off[station - 1, 0];
                     double offset2 = off[station - 1, 1];
                     double offset3 = off[station - 1, 2];
-                    HttpContext.Current.Session["Shower_off1"] = offset1.ToString();
-                    HttpContext.Current.Session["Shower_off2"] = offset2.ToString();
-                    HttpContext.Current.Session["Shower_off3"] = offset3.ToString();
+                    HttpContext.Current.Session["Shower_off1"] = FormatSessionDouble(offset1);
+                    HttpContext.Current.Session["Shower_off2"] = FormatSessionDouble(offset2);
+                    HttpContext.Current.Session["Shower_off3"] = FormatSessionDouble(offset3);
 
                     if (ThetaPhi(CH1, CH2, CH3, time[3], time[4], time[5], (double)p1, (double)p2, (double)p3, charge[0], charge[1], charge[2]))
                     {
@@ -896,9 +872,9 @@ namespace WebApplication2
                            HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
                         }
                     }
-                    HttpContext.Current.Session["Shower_off1"] = offsetthr1.ToString();
-                    HttpContext.Current.Session["Shower_off2"] = offsetthr2.ToString();
-                    HttpContext.Current.Session["Shower_off3"] = offsetthr3.ToString();
+                    HttpContext.Current.Session["Shower_off1"] = FormatSessionDouble(offsetthr1);
+                    HttpContext.Current.Session["Shower_off2"] = FormatSessionDouble(offsetthr2);
+                    HttpContext.Current.Session["Shower_off3"] = FormatSessionDouble(offsetthr3);
                 }
                 if (evt_all > 0) HttpContext.Current.Session["Run_ReconstructionFailureRate"] = (100-evt_rec * 100 / evt_all).ToString() + "%";
                 //}
@@ -1650,9 +1626,9 @@ namespace WebApplication2
             double offset1 = 0;
             double offset2 =0 ;
             double offset3 =0;
-                offset1 = Convert.ToDouble(HttpContext.Current.Session["Shower_off1"].ToString());
-                offset2 = Convert.ToDouble(HttpContext.Current.Session["Shower_off2"].ToString());
-                offset3 = Convert.ToDouble(HttpContext.Current.Session["Shower_off3"].ToString());
+            TryGetSessionDouble("Shower_off1", out offset1);
+            TryGetSessionDouble("Shower_off2", out offset2);
+            TryGetSessionDouble("Shower_off3", out offset3);
             double th =-1.0; double ph=-1.0;
             int maximum, Kmin;
             double clight, aaa, bbb, ccc, ddd, gamma, delta, ALPHA, BETA, GAMMA, phi, thita, DT1, DT2, Phi2, Thita2, xx1, yy1, zz1, xx2, yy2, zz2, minimum;

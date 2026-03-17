@@ -70,7 +70,7 @@
 
 ---
 
-## Commit 2 (auto parameter handoff από Calibration -> Online Monitoring)
+## Commit 2 (calibration summary file)
 
 ### Τι υλοποιήθηκε
 
@@ -80,12 +80,24 @@
   - `offset1`, `offset2`, `offset3`
   - `peak1`, `peak2`, `peak3`
   - `station`, `calibration_folder`, `generated_at_utc`
-- Στο `OnlineMonitoring.aspx.cs` το summary διαβάζεται αυτόματα στο load και περνά στις τιμές των parameters.
+- Το summary κρατιέται ως reference αρχείο για τον operator.
+- Τα `Telescope Parameters` στο `Online Monitoring` δεν πρέπει να αλλάζουν αυτόματα από το summary.
 
 ### Κανόνας invalid τιμών
 
 - Τιμές τύπου `9999` / `-9999` (και γενικά `abs(value) >= 9000`) θεωρούνται invalid και αγνοούνται από τον υπολογισμό means.
-- Αν το summary δεν έχει έγκυρες τιμές, δεν σπάει το UI· κρατούνται defaults/session values και γράφεται warning log.
+- Αν το summary δεν έχει έγκυρες τιμές, δεν σπάει το UI.
+
+---
+
+## Commit 3 (calibration start latency + reconstruction regression)
+
+### Τι αλλάξαμε
+
+- Στο calibration `START` δεν γίνεται πλέον blocking read/plot generation μέσα στο ίδιο request.
+- Ο calibration reader ευθυγραμμίζεται πλέον στο τελευταίο πλήρες event του τρέχοντος `*.data` file, αντί να μπορεί να γυρίσει σχεδόν στην αρχή του αρχείου όταν υπάρχει partial tail.
+- Το πρώτο calibration polling γίνεται γρήγορα μετά το `START`, ώστε το run να ξεκινά άμεσα από πλευράς UI.
+- Το `last_calibration_summary.txt` δεν ξαναγράφει αυτόματα timing offsets στο `Online Monitoring`, ώστε το showers reconstruction να μην αλλάζει behaviour σε σχέση με τον παλιό κώδικα.
 
 ---
 
