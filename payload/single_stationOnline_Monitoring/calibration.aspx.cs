@@ -18,7 +18,6 @@ namespace WebApplication2
     {
         private const long CalibrationEventBytes = 5050;
         private const int CalibrationDefaultIntervalMs = 90000;
-        private const int CalibrationFastStartIntervalMs = 5000;
         static int ic = 0;
         // static public StreamReader rs=null;
 
@@ -44,20 +43,6 @@ namespace WebApplication2
             long alignedPos = endPos - (endPos % CalibrationEventBytes);
             reader.DiscardBufferedData();
             reader.BaseStream.Seek(alignedPos, SeekOrigin.Begin);
-        }
-
-        private void EnableCalibrationTimerForImmediateStart()
-        {
-            if (IsReadAllMode()) return;
-            HttpContext.Current.Session["Calibration_FastStartPending"] = "1";
-            Timer1.Interval = CalibrationFastStartIntervalMs;
-            Timer1.Enabled = true;
-        }
-
-        private void RestoreCalibrationTimerDefaults()
-        {
-            HttpContext.Current.Session["Calibration_FastStartPending"] = "0";
-            Timer1.Interval = CalibrationDefaultIntervalMs;
         }
 
         private string GetConfiguredDataRoot()
@@ -125,11 +110,8 @@ namespace WebApplication2
             if (HttpContext.Current.Session["Calibration_tim2_sync"] == null) HttpContext.Current.Session["Calibration_tim2_sync"] = "5.0";
             if (HttpContext.Current.Session["Calibration_tim3_sync"] == null) HttpContext.Current.Session["Calibration_tim3_sync"] = "5.0";
             if (HttpContext.Current.Session["CFD"] == null) HttpContext.Current.Session["CFD"] = 0; //initial value
-            if (HttpContext.Current.Session["Calibration_FastStartPending"] == null) HttpContext.Current.Session["Calibration_FastStartPending"] = "0";
 
-            Timer1.Interval = HttpContext.Current.Session["Calibration_FastStartPending"].ToString() == "1"
-                ? CalibrationFastStartIntervalMs
-                : CalibrationDefaultIntervalMs;
+            Timer1.Interval = CalibrationDefaultIntervalMs;
 
             if (!IsPostBack)
             {
@@ -473,8 +455,8 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Response_Started"] = 1;
             ShowStatusResponse();
 
-            if (IsReadAllMode()) Read_Events_and_Show_Protected();
-            else EnableCalibrationTimerForImmediateStart();
+            if (!IsReadAllMode()) this.Timer1.Enabled = true;
+            Read_Events_and_Show_Protected();
             //Show_Response_Tab();
         }
 
@@ -559,8 +541,8 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Sync_Started"] = 1;
             ShowStatusSync();
 
-            if (IsReadAllMode()) Read_Events_and_Show_Protected();
-            else EnableCalibrationTimerForImmediateStart();
+            if (!IsReadAllMode()) this.Timer1.Enabled = true;
+            Read_Events_and_Show_Protected();
             //Show_Sync_Tab();
         }
 
@@ -1214,11 +1196,6 @@ namespace WebApplication2
             try
             {
                 Read_Events_and_Show_Protected();
-                if (HttpContext.Current.Session["Calibration_FastStartPending"] != null &&
-                    HttpContext.Current.Session["Calibration_FastStartPending"].ToString() == "1")
-                {
-                    RestoreCalibrationTimerDefaults();
-                }
             }
             finally
             {
@@ -1269,7 +1246,7 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Response_Started"] = 0;
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0")
             {
-                RestoreCalibrationTimerDefaults();
+                Timer1.Interval = CalibrationDefaultIntervalMs;
                 this.Timer1.Enabled = false;
             }
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
@@ -1283,7 +1260,7 @@ namespace WebApplication2
                 HttpContext.Current.Session["Calibration_Sync_Started"] = 0;
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0")
             {
-                RestoreCalibrationTimerDefaults();
+                Timer1.Interval = CalibrationDefaultIntervalMs;
                 this.Timer1.Enabled = false;
             }
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
