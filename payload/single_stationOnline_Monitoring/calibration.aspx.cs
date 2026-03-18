@@ -18,12 +18,34 @@ namespace WebApplication2
     {
         private const long CalibrationEventBytes = 5050;
         private const int CalibrationDefaultIntervalMs = 90000;
+        private const int CalibrationLightPollIntervalMs = 15000;
+        private const int CalibrationLightPollMaxEvents = 250;
         static int ic = 0;
         // static public StreamReader rs=null;
 
         private bool IsReadAllMode()
         {
             return HttpContext.Current.Session["ReadAll"] != null && HttpContext.Current.Session["ReadAll"].ToString() == "1";
+        }
+
+        private bool IsLightCalibrationPollPending()
+        {
+            return HttpContext.Current.Session["Calibration_LightPollPending"] != null &&
+                   HttpContext.Current.Session["Calibration_LightPollPending"].ToString() == "1";
+        }
+
+        private void ArmLightCalibrationPoll()
+        {
+            if (IsReadAllMode()) return;
+            HttpContext.Current.Session["Calibration_LightPollPending"] = "1";
+            Timer1.Interval = CalibrationLightPollIntervalMs;
+            Timer1.Enabled = true;
+        }
+
+        private void RestoreDefaultCalibrationTimer()
+        {
+            HttpContext.Current.Session["Calibration_LightPollPending"] = "0";
+            Timer1.Interval = CalibrationDefaultIntervalMs;
         }
 
         private void SafeSeekReader(StreamReader reader, long absolutePosition)
@@ -110,8 +132,11 @@ namespace WebApplication2
             if (HttpContext.Current.Session["Calibration_tim2_sync"] == null) HttpContext.Current.Session["Calibration_tim2_sync"] = "5.0";
             if (HttpContext.Current.Session["Calibration_tim3_sync"] == null) HttpContext.Current.Session["Calibration_tim3_sync"] = "5.0";
             if (HttpContext.Current.Session["CFD"] == null) HttpContext.Current.Session["CFD"] = 0; //initial value
+            if (HttpContext.Current.Session["Calibration_LightPollPending"] == null) HttpContext.Current.Session["Calibration_LightPollPending"] = "0";
 
-            Timer1.Interval = CalibrationDefaultIntervalMs;
+            Timer1.Interval = IsLightCalibrationPollPending()
+                ? CalibrationLightPollIntervalMs
+                : CalibrationDefaultIntervalMs;
 
             if (!IsPostBack)
             {
@@ -455,8 +480,8 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Response_Started"] = 1;
             ShowStatusResponse();
 
-            if (!IsReadAllMode()) this.Timer1.Enabled = true;
-            Read_Events_and_Show_Protected();
+            if (IsReadAllMode()) Read_Events_and_Show_Protected();
+            else ArmLightCalibrationPoll();
             //Show_Response_Tab();
         }
 
@@ -541,8 +566,8 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Sync_Started"] = 1;
             ShowStatusSync();
 
-            if (!IsReadAllMode()) this.Timer1.Enabled = true;
-            Read_Events_and_Show_Protected();
+            if (IsReadAllMode()) Read_Events_and_Show_Protected();
+            else ArmLightCalibrationPoll();
             //Show_Sync_Tab();
         }
 
@@ -694,7 +719,7 @@ namespace WebApplication2
             }
             long this_event_start = -1;
             int evts_read = 0;
-            int maxevt = 2000;
+            int maxevt = IsLightCalibrationPollPending() ? CalibrationLightPollMaxEvents : 2000;
             bool bypass = false;
             int offset = 0;
             if (HttpContext.Current.Session["ReadAll"].ToString() == "1") maxevt = 99999999; 
@@ -1080,6 +1105,7 @@ namespace WebApplication2
         {
             if (HttpContext.Current.Session["Calibration_Response_Started"] == null) return;
             if (HttpContext.Current.Session["Calibration_Sync_Started"] == null) return;
+            bool shouldRefreshPlots = !IsLightCalibrationPollPending();
             int cal_res_started = (int)HttpContext.Current.Session["Calibration_Response_Started"];
             int cal_syn_started = (int)HttpContext.Current.Session["Calibration_Sync_Started"];
             if (cal_res_started == 1 && cal_syn_started == 0)
@@ -1097,19 +1123,20 @@ namespace WebApplication2
                 }
                 finally
                 {
-                    string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
-                    string result = BatchCommand("script_calib_start.cmd", strPathCalibrationFolder);
-                    HttpContext.Current.Session["Calibration_State"] = result;
-                    string SessionId = HttpContext.Current.Session.SessionID;
-                    string image = "outroot_" + SessionId + ".jpg";
-                    string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot.jpg";
-                    File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
+                    if (shouldRefreshPlots)
+                    {
+                        string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
+                        string result = BatchCommand("script_calib_start.cmd", strPathCalibrationFolder);
+                        HttpContext.Current.Session["Calibration_State"] = result;
+                        string SessionId = HttpContext.Current.Session.SessionID;
+                        string image = "outroot_" + SessionId + ".jpg";
+                        string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot.jpg";
+                        File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
-                    string ss = img0.ImageUrl;
-                    //img0.Attributes["src"] = "images/outroot1.jpg";
-                    img0.ImageUrl = "images/" + image;
-                    ss = img0.ImageUrl;
-                    //img0.
+                        string ss = img0.ImageUrl;
+                        img0.ImageUrl = "images/" + image;
+                        ss = img0.ImageUrl;
+                    }
                     HttpContext.Current.Session["Calibration_Response_Started"] = 1;
                 }
             }
@@ -1127,19 +1154,20 @@ namespace WebApplication2
                 }
                 finally
                 {
-                    string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
-                    string result = BatchCommand("script_sync_start.cmd", strPathCalibrationFolder);
-                    HttpContext.Current.Session["Calibration_State"] = result;
-                    string SessionId = HttpContext.Current.Session.SessionID;
-                    string image = "outroot2_" + SessionId + ".jpg";
-                    string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot2.jpg";
-                    File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
+                    if (shouldRefreshPlots)
+                    {
+                        string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
+                        string result = BatchCommand("script_sync_start.cmd", strPathCalibrationFolder);
+                        HttpContext.Current.Session["Calibration_State"] = result;
+                        string SessionId = HttpContext.Current.Session.SessionID;
+                        string image = "outroot2_" + SessionId + ".jpg";
+                        string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot2.jpg";
+                        File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
-                    string ss = img1.ImageUrl;
-                    //img0.Attributes["src"] = "images/outroot1.jpg";
-                    img1.ImageUrl = "images/" + image;
-                    ss = img1.ImageUrl;
-                    //img0.
+                        string ss = img1.ImageUrl;
+                        img1.ImageUrl = "images/" + image;
+                        ss = img1.ImageUrl;
+                    }
                     HttpContext.Current.Session["Calibration_Sync_Started"] = 1;
                 }
             }
@@ -1159,31 +1187,35 @@ namespace WebApplication2
                 }
                 finally
                 {
-                    string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
-                    string result = BatchCommand("script_calib_start.cmd", strPathCalibrationFolder);
-                    HttpContext.Current.Session["Calibration_State"] = result;
-                    string SessionId = HttpContext.Current.Session.SessionID;
-                    string image = "outroot_" + SessionId + ".jpg";
-                    string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot.jpg";
-                    File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
+                    if (shouldRefreshPlots)
+                    {
+                        string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
+                        string result = BatchCommand("script_calib_start.cmd", strPathCalibrationFolder);
+                        HttpContext.Current.Session["Calibration_State"] = result;
+                        string SessionId = HttpContext.Current.Session.SessionID;
+                        string image = "outroot_" + SessionId + ".jpg";
+                        string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot.jpg";
+                        File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
-                    string ss = img0.ImageUrl;
-                    //img0.Attributes["src"] = "images/outroot1.jpg";
-                    img0.ImageUrl = "images/" + image;
-                    ss = img0.ImageUrl;
-                    //img0.
+                        string ss = img0.ImageUrl;
+                        img0.ImageUrl = "images/" + image;
+                        ss = img0.ImageUrl;
+                    }
                     HttpContext.Current.Session["Calibration_Response_Started"] = 1;
-                    result = BatchCommand("script_sync_start.cmd", strPathCalibrationFolder);
-                    HttpContext.Current.Session["Calibration_State"] = result;
-                    image = "outroot2_" + SessionId + ".jpg";
-                    strPathName = @"~\images\" + image; strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot2.jpg";
-                    File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
+                    if (shouldRefreshPlots)
+                    {
+                        string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
+                        string SessionId = HttpContext.Current.Session.SessionID;
+                        string result = BatchCommand("script_sync_start.cmd", strPathCalibrationFolder);
+                        HttpContext.Current.Session["Calibration_State"] = result;
+                        string image = "outroot2_" + SessionId + ".jpg";
+                        string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot2.jpg";
+                        File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
-                    ss = img1.ImageUrl;
-                    //img0.Attributes["src"] = "images/outroot1.jpg";
-                    img1.ImageUrl = "images/" + image;
-                    ss = img1.ImageUrl;
-                    //img0.
+                        string ss = img1.ImageUrl;
+                        img1.ImageUrl = "images/" + image;
+                        ss = img1.ImageUrl;
+                    }
                     HttpContext.Current.Session["Calibration_Sync_Started"] = 1;
 
                 }
@@ -1196,6 +1228,10 @@ namespace WebApplication2
             try
             {
                 Read_Events_and_Show_Protected();
+                if (IsLightCalibrationPollPending())
+                {
+                    RestoreDefaultCalibrationTimer();
+                }
             }
             finally
             {
@@ -1246,7 +1282,7 @@ namespace WebApplication2
             HttpContext.Current.Session["Calibration_Response_Started"] = 0;
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0")
             {
-                Timer1.Interval = CalibrationDefaultIntervalMs;
+                RestoreDefaultCalibrationTimer();
                 this.Timer1.Enabled = false;
             }
             if (HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
@@ -1260,7 +1296,7 @@ namespace WebApplication2
                 HttpContext.Current.Session["Calibration_Sync_Started"] = 0;
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0")
             {
-                Timer1.Interval = CalibrationDefaultIntervalMs;
+                RestoreDefaultCalibrationTimer();
                 this.Timer1.Enabled = false;
             }
             if (HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "0") HttpContext.Current.Session["SetFilePosition"] = "";// if he resumes he will not change the position if the other is running
