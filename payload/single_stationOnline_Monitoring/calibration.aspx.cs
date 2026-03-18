@@ -18,7 +18,7 @@ namespace WebApplication2
     {
         private const long CalibrationEventBytes = 5050;
         private const int CalibrationDefaultIntervalMs = 90000;
-        private const int CalibrationFastStartIntervalMs = 1000;
+        private const int CalibrationFastStartIntervalMs = 5000;
         static int ic = 0;
         // static public StreamReader rs=null;
 
@@ -1210,19 +1210,22 @@ namespace WebApplication2
         }
         protected void Timer1_Tick(object sender, EventArgs e)
         {
-            //Timer1.Enabled = false;
-            //Timer1.Interval=9999999;
-            Read_Events_and_Show_Protected();
-            if (HttpContext.Current.Session["Calibration_FastStartPending"] != null &&
-                HttpContext.Current.Session["Calibration_FastStartPending"].ToString() == "1")
+            Timer1.Enabled = false;
+            try
             {
-                RestoreCalibrationTimerDefaults();
+                Read_Events_and_Show_Protected();
+                if (HttpContext.Current.Session["Calibration_FastStartPending"] != null &&
+                    HttpContext.Current.Session["Calibration_FastStartPending"].ToString() == "1")
+                {
+                    RestoreCalibrationTimerDefaults();
+                }
             }
-            //Timer1.Interval = 120000;
-            Timer1.Enabled =
-                HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "1" ||
-                HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "1";
-            //Show_Response_Tab();
+            finally
+            {
+                Timer1.Enabled =
+                    HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "1" ||
+                    HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "1";
+            }
         }
 
         protected void Tab_Response_Click(object sender, EventArgs e)
