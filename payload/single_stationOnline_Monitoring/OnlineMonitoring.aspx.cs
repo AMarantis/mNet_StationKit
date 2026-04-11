@@ -1775,7 +1775,7 @@ namespace WebApplication2
             }
            double[] eventInfo = (double[])(Session["event"]);//times, peaks, charge,theta,ph
                                                                //            void ThetaPhi(int ch1, int ch2, int ch3, double RT1, double RT2, double RT3, double p1, double p2, double p3, double charge1, double charge2, double charge3)
-            eventInfo[0] = RT1; eventInfo[1] = RT2;eventInfo[2] = RT3;
+            eventInfo[0] = rti[0]; eventInfo[1] = rti[1];eventInfo[2] = rti[2];
             eventInfo[3] = p1; eventInfo[4] = p2; eventInfo[5] = p3;
             eventInfo[6] = charge1; eventInfo[7] = charge2; eventInfo[8] = charge3;
             eventInfo[9] = th; eventInfo[10] = ph;
