@@ -72,6 +72,55 @@ namespace WebApplication2
             }
         }
 
+        private void AppendMissingShowerFileWarningOnce(string filePath)
+        {
+            string sessionKey = "LastMissingShowerFileWarning";
+            string previous = HttpContext.Current.Session[sessionKey] as string;
+            if (string.Equals(previous, filePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            HttpContext.Current.Session[sessionKey] = filePath;
+            AppendMonitoringLog("monitoring_warnings.log", "WARN", "Expected shower data file does not exist: " + filePath);
+        }
+
+        private void ClearMissingShowerFileWarning()
+        {
+            HttpContext.Current.Session["LastMissingShowerFileWarning"] = null;
+        }
+
+        private void RefreshMonitoringImages(string showerFolder, string batchResult)
+        {
+            string sessionId = HttpContext.Current.Session.SessionID;
+            string pulseSource = Path.Combine(showerFolder, "pulses1.jpg");
+            string plotsSource = Path.Combine(showerFolder, "plots.jpg");
+
+            if (!File.Exists(pulseSource) || !File.Exists(plotsSource))
+            {
+                string details = string.IsNullOrWhiteSpace(batchResult) ? "no batch output" : batchResult.Trim();
+                AppendMonitoringLog(
+                    "monitoring_errors.log",
+                    "ERROR",
+                    "Monitoring plots were not generated. pulses1 exists=" + File.Exists(pulseSource).ToString() +
+                    ", plots exists=" + File.Exists(plotsSource).ToString() +
+                    ", folder=" + showerFolder +
+                    ", batch=" + details
+                );
+                return;
+            }
+
+            string image = "pulses_" + sessionId + ".jpg";
+            string strPathName = @"~\images\" + image;
+            File.Copy(pulseSource, Server.MapPath(strPathName), true);
+            img0.ImageUrl = "images/" + image;
+
+            image = "plots_" + sessionId + ".jpg";
+            strPathName = @"~\images\" + image;
+            File.Copy(plotsSource, Server.MapPath(strPathName), true);
+            img1.ImageUrl = "images/" + image;
+        }
+
         private string GetConfiguredDataRoot()
         {
             string fromEnv = Environment.GetEnvironmentVariable("MNET_DATA_ROOT");
@@ -683,7 +732,11 @@ namespace WebApplication2
             }
             else
             {
-                AppendMonitoringLog("monitoring_warnings.log", "WARN", "Expected shower data file does not exist: " + strRootRelativePathName);
+                AppendMissingShowerFileWarningOnce(strRootRelativePathName);
+            }
+            if (File.Exists(strRootRelativePathName))
+            {
+                ClearMissingShowerFileWarning();
             }
             return true;
         }
@@ -1163,20 +1216,7 @@ namespace WebApplication2
                     string strPathShowerFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
                     string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["SelectedStation"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
                     HttpContext.Current.Session["Shower_State"] = result;
-                    string SessionId = HttpContext.Current.Session.SessionID;
-                    string image = "pulses_" + SessionId + ".jpg";
-                    string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathShowerFolder.ToString() + @"\pulses1.jpg";
-                    File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
-                    string ss = img0.ImageUrl;
-                    img0.ImageUrl = "images/" + image;
-                    ss = img0.ImageUrl;
-
-                    image = "plots_" + SessionId + ".jpg";
-                    strPathName = @"~\images\" + image; strRootRelativePathName = strPathShowerFolder.ToString() + @"\plots.jpg";
-                    File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
-                    ss = img1.ImageUrl;
-                    img1.ImageUrl = "images/" + image;
-                    ss = img1.ImageUrl;
+                    RefreshMonitoringImages(strPathShowerFolder, result);
                     }
                     if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
                     {
@@ -1189,20 +1229,7 @@ namespace WebApplication2
                                 string strPathShowerFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
                                 string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["SelectedStation"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
                                 HttpContext.Current.Session["Shower_State"] = result;
-                                string SessionId = HttpContext.Current.Session.SessionID;
-                                string image = "pulses_" + SessionId + ".jpg";
-                                string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathShowerFolder.ToString() + @"\pulses1.jpg";
-                                File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
-                                string ss = img0.ImageUrl;
-                                img0.ImageUrl = "images/" + image;
-                                ss = img0.ImageUrl;
-
-                                image = "plots_" + SessionId + ".jpg";
-                                strPathName = @"~\images\" + image; strRootRelativePathName = strPathShowerFolder.ToString() + @"\plots.jpg";
-                                File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
-                                ss = img1.ImageUrl;
-                                img1.ImageUrl = "images/" + image;
-                                ss = img1.ImageUrl;
+                                RefreshMonitoringImages(strPathShowerFolder, result);
                             }
                             else
                                 Set_File_Position();//goto the next file
