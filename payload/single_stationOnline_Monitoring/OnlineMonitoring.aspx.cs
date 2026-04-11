@@ -1086,11 +1086,11 @@ namespace WebApplication2
                     thres[ch3] = (float)Convert.ChangeType(HttpContext.Current.Session["Shower_thr3"].ToString(), typeof(float));
                     try
                     {
-                        if (peak[ch1] > thres[ch1] || peak[ch2] > thres[ch2] || peak[ch3] > thres[ch3])
+                if (peak[ch1] > thres[ch1] && peak[ch2] > thres[ch2] && peak[ch3] > thres[ch3])
+                {
+                        try
                         {
-                            try
-                            {
-                                reconstructed=Process_Pulses(ch1,ch2,ch3,vv, peak[ch1], peak[ch2], peak[ch3]);
+                            reconstructed=Process_Pulses(ch1,ch2,ch3,vv, peak[ch1], peak[ch2], peak[ch3]);
                             }
                             catch (Exception)
                             {
@@ -1161,7 +1161,7 @@ namespace WebApplication2
                     if (read_events>0 && HttpContext.Current.Session["ReadAll"].ToString() == "0")
                     { 
                     string strPathShowerFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
-                    string result = BatchCommand("script_shower_start.cmd", strPathShowerFolder);
+                    string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["SelectedStation"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
                     HttpContext.Current.Session["Shower_State"] = result;
                     string SessionId = HttpContext.Current.Session.SessionID;
                     string image = "pulses_" + SessionId + ".jpg";
@@ -1187,7 +1187,7 @@ namespace WebApplication2
                             if(read_events > 0)
                             {
                                 string strPathShowerFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
-                                string result = BatchCommand("script_shower_start.cmd", strPathShowerFolder);
+                                string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["SelectedStation"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
                                 HttpContext.Current.Session["Shower_State"] = result;
                                 string SessionId = HttpContext.Current.Session.SessionID;
                                 string image = "pulses_" + SessionId + ".jpg";

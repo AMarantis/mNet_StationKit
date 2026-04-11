@@ -4,4 +4,4 @@ if "%MNET_ROOT_EXE%"=="" (
   echo Expected something like: E:\mNetStationKit\deps\root\bin\root.exe>&2
   exit /b 1
 )
-"%MNET_ROOT_EXE%" -b -q pulses.C
+"%MNET_ROOT_EXE%" -b -q "pulses.C(%1, %2, %3, %4)"
