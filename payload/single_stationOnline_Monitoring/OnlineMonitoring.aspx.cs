@@ -882,7 +882,6 @@ namespace WebApplication2
                     }
                 }
             }
-            bool evt_rec_raised = false;
             if (trg[0] > 0 && trg[1] > 0 && trg[2] > 0)
             {
                 int evt_all = (int)Convert.ChangeType(HttpContext.Current.Session["Run_TotalEvents"].ToString(), typeof(int));
@@ -891,26 +890,16 @@ namespace WebApplication2
                 double theta_thr = -1.0; double phi_thr = -1.0;
                 if (ThetaPhi(CH1, CH2, CH3, time[0], time[1], time[2], (double)p1, (double)p2, (double)p3, charge[0], charge[1], charge[2]))
                 {
-                    evt_rec_raised = true;
                     double[] eventInfo = (double[])(Session["event"]);//times, peaks, charge,theta,ph
                     theta_thr = eventInfo[9];
                     phi_thr = eventInfo[10];
-                    evt_rec++;
-                    HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
                 }
                 //else
                 {
                     if (ThetaPhi(CH1, CH2, CH3, time[3], time[4], time[5], (double)p1, (double)p2, (double)p3, charge[0], charge[1], charge[2]))
                     {
-                        evt_rec_raised = true;
-                            if (theta_thr<0 && phi_thr<0)
-                         {
-                            evt_rec++;
-                           HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
-                        }
                     }
                 }
-                if (evt_all > 0) HttpContext.Current.Session["Run_ReconstructionFailureRate"] = (100-evt_rec * 100 / evt_all).ToString() + "%";
                 //}
                 //write out
                 string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
@@ -927,8 +916,12 @@ namespace WebApplication2
                     double[] eventInfo = (double[])(Session["event"]);//times, peaks, charge,theta,ph
                     bool badEvent = false;
                     if (eventInfo[3] > 60 && eventInfo[4] > 60 && eventInfo[5] > 60 && (eventInfo[6] + eventInfo[7] + eventInfo[8]) < 1000) badEvent = true;
+                    if ((eventInfo[6] < 15) || (eventInfo[7] < 15) || (eventInfo[8] < 15)) badEvent = true;
                     if (((theta_thr > 0 && phi_thr > 0) || (eventInfo[9] > 0 && eventInfo[10] > 0)) && !badEvent)
                     {
+                        evt_rec++;
+                        HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
+                        if (evt_all > 0) HttpContext.Current.Session["Run_ReconstructionFailureRate"] = (100 - evt_rec * 100 / evt_all).ToString() + "%";
                         string time_event = String.Format("{0} {1} {2} {3} {4} {5} {6}", eventTime[0], eventTime[1], eventTime[2], eventTime[3], eventTime[4], eventTime[5], eventTime[6]);
                         string info_event = String.Format("{0,2:0.00} {1,2:0.00} {2,2:0.00} {3,2:0.00} {4,2:0.00} {5,2:0.00} {6,2:0.00} {7,2:0.00} {8,2:0.00} {9,2:0.00} {10,2:0.00} {11,2:0.00} {12,2:0.00}", eventInfo[0], eventInfo[1], eventInfo[2], eventInfo[3], eventInfo[4], eventInfo[5], eventInfo[6], eventInfo[7], eventInfo[8], eventInfo[9], eventInfo[10], theta_thr, phi_thr);
                         File.AppendAllText(path, time_event + "\n");
@@ -954,8 +947,8 @@ namespace WebApplication2
                     }
                     else
                     {
-                        if (evt_rec_raised==true) evt_rec--;
                         HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
+                        if (evt_all > 0) HttpContext.Current.Session["Run_ReconstructionFailureRate"] = (100 - evt_rec * 100 / evt_all).ToString() + "%";
                     }
                 }
                 catch
