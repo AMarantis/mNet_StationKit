@@ -1207,7 +1207,7 @@ namespace WebApplication2
                     if (read_events>0 && HttpContext.Current.Session["ReadAll"].ToString() == "0")
                     { 
                     string strPathShowerFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
-                    string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["SelectedStation"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
+                    string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["Station"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
                     HttpContext.Current.Session["Shower_State"] = result;
                     RefreshMonitoringImages(strPathShowerFolder, result);
                     }
@@ -1220,7 +1220,7 @@ namespace WebApplication2
                             if(read_events > 0)
                             {
                                 string strPathShowerFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
-                                string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["SelectedStation"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
+                                string result = BatchCommand("script_shower_start.cmd " + Convert.ToString(HttpContext.Current.Session["Station"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr1"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr2"]) + " " + Convert.ToString(HttpContext.Current.Session["Shower_thr3"]), strPathShowerFolder);
                                 HttpContext.Current.Session["Shower_State"] = result;
                                 RefreshMonitoringImages(strPathShowerFolder, result);
                             }
