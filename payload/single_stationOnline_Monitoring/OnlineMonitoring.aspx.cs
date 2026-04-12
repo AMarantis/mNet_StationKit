@@ -829,7 +829,6 @@ namespace WebApplication2
                     }
                 }
             }
-            bool evt_rec_raised = false;
             if (trg[0] > 0 && trg[1] > 0 && trg[2] > 0)
             {
                 int evt_all = (int)Convert.ChangeType(HttpContext.Current.Session["Run_TotalEvents"].ToString(), typeof(int));
@@ -838,26 +837,17 @@ namespace WebApplication2
                 double theta_thr = -1.0; double phi_thr = -1.0;
                 if (ThetaPhi(CH1, CH2, CH3, time[0], time[1], time[2], (double)p1, (double)p2, (double)p3, charge[0], charge[1], charge[2]))
                 {
-                    evt_rec_raised = true;
                     double[] eventInfo = (double[])(Session["event"]);//times, peaks, charge,theta,ph
                     theta_thr = eventInfo[9];
                     phi_thr = eventInfo[10];
-                    evt_rec++;
-                    HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
                 }
                 //else
                 {
                     if (ThetaPhi(CH1, CH2, CH3, time[3], time[4], time[5], (double)p1, (double)p2, (double)p3, charge[0], charge[1], charge[2]))
                     {
-                        evt_rec_raised = true;
-                            if (theta_thr<0 && phi_thr<0)
-                         {
-                            evt_rec++;
-                           HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
-                        }
+                        ;
                     }
                 }
-                if (evt_all > 0) HttpContext.Current.Session["Run_ReconstructionFailureRate"] = (100-evt_rec * 100 / evt_all).ToString() + "%";
                 //}
                 //write out
                 string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Shower_folder"].ToString());
@@ -874,6 +864,7 @@ namespace WebApplication2
                     double[] eventInfo = (double[])(Session["event"]);//times, peaks, charge,theta,ph
                     bool badEvent = false;
                     if (eventInfo[3] > 60 && eventInfo[4] > 60 && eventInfo[5] > 60 && (eventInfo[6] + eventInfo[7] + eventInfo[8]) < 1000) badEvent = true;
+                    if ((eventInfo[6] < 15) || (eventInfo[7] < 15) || (eventInfo[8] < 15)) badEvent = true;
                     if (((theta_thr > 0 && phi_thr > 0) || (eventInfo[9] > 0 && eventInfo[10] > 0)) && !badEvent)
                     {
                         string time_event = String.Format("{0} {1} {2} {3} {4} {5} {6}", eventTime[0], eventTime[1], eventTime[2], eventTime[3], eventTime[4], eventTime[5], eventTime[6]);
@@ -897,18 +888,16 @@ namespace WebApplication2
                         HttpContext.Current.Session["Event_PulseCharges"] = PulseCharges;
                         HttpContext.Current.Session["Event_Zenith"] = zenith;
                         HttpContext.Current.Session["Event_Azimuth"] = azimuth;
-                        written = true;
-                    }
-                    else
-                    {
-                        if (evt_rec_raised==true) evt_rec--;
+                        evt_rec++;
                         HttpContext.Current.Session["Run_ReconstructedEvents"] = evt_rec;
+                        written = true;
                     }
                 }
                 catch
                 {
                     ;
                 }
+                if (evt_all > 0) HttpContext.Current.Session["Run_ReconstructionFailureRate"] = (100-evt_rec * 100 / evt_all).ToString() + "%";
                 return written;
             }
             return false;
@@ -1086,7 +1075,7 @@ namespace WebApplication2
                     thres[ch3] = (float)Convert.ChangeType(HttpContext.Current.Session["Shower_thr3"].ToString(), typeof(float));
                     try
                     {
-                        if (peak[ch1] > thres[ch1] || peak[ch2] > thres[ch2] || peak[ch3] > thres[ch3])
+                        if (peak[ch1] > thres[ch1] && peak[ch2] > thres[ch2] && peak[ch3] > thres[ch3])
                         {
                             try
                             {
@@ -1775,7 +1764,7 @@ namespace WebApplication2
             }
            double[] eventInfo = (double[])(Session["event"]);//times, peaks, charge,theta,ph
                                                                //            void ThetaPhi(int ch1, int ch2, int ch3, double RT1, double RT2, double RT3, double p1, double p2, double p3, double charge1, double charge2, double charge3)
-            eventInfo[0] = RT1; eventInfo[1] = RT2;eventInfo[2] = RT3;
+            eventInfo[0] = rti[0]; eventInfo[1] = rti[1];eventInfo[2] = rti[2];
             eventInfo[3] = p1; eventInfo[4] = p2; eventInfo[5] = p3;
             eventInfo[6] = charge1; eventInfo[7] = charge2; eventInfo[8] = charge3;
             eventInfo[9] = th; eventInfo[10] = ph;
