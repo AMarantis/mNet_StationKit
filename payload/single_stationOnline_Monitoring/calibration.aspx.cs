@@ -1087,7 +1087,13 @@ namespace WebApplication2
             string IsSyncStarted = syncStartedObj.ToString();
             StreamReader rs = (StreamReader)HttpContext.Current.Session["Calibration_rs"];
             if (rs == null) { Set_File_Position(); rs = (StreamReader)HttpContext.Current.Session["Calibration_rs"]; }
+            if (rs != null && rs.BaseStream == null)
+            {
+                Set_File_Position();
+                rs = (StreamReader)HttpContext.Current.Session["Calibration_rs"];
+            }
             if (rs == null) return;
+            if (rs.BaseStream == null) return;
             long pos = rs.BaseStream.Position;
             try
             {
@@ -1095,6 +1101,7 @@ namespace WebApplication2
             }
             catch (Exception)
             {
+                if (rs.BaseStream == null) return;
                 long record = rs.BaseStream.Length - (pos + CalibrationEventBytes);
                 if (record > CalibrationEventBytes)
                     SafeSeekReader(rs, pos + CalibrationEventBytes);
