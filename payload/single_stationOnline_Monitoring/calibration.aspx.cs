@@ -20,6 +20,7 @@ namespace WebApplication2
         private const int CalibrationDefaultIntervalMs = 90000;
         private const int CalibrationLightPollIntervalMs = 15000;
         private const int CalibrationLightPollMaxEvents = 250;
+        private static readonly object CalibrationDebugLogLock = new object();
         static int ic = 0;
         // static public StreamReader rs=null;
 
@@ -46,6 +47,61 @@ namespace WebApplication2
         {
             HttpContext.Current.Session["Calibration_LightPollPending"] = "0";
             Timer1.Interval = CalibrationDefaultIntervalMs;
+        }
+
+        private string GetKitLogsPath()
+        {
+            string webRoot = Server.MapPath("~");
+            if (string.IsNullOrWhiteSpace(webRoot)) return null;
+
+            string kitRoot = Path.GetFullPath(Path.Combine(webRoot, "..", ".."));
+            string logsPath = Path.Combine(kitRoot, "logs");
+            if (!Directory.Exists(logsPath))
+            {
+                Directory.CreateDirectory(logsPath);
+            }
+            return logsPath;
+        }
+
+        private void LogCalibrationDebug(string message)
+        {
+            try
+            {
+                string logsPath = GetKitLogsPath();
+                if (string.IsNullOrWhiteSpace(logsPath)) return;
+
+                string filePath = Path.Combine(logsPath, "calibration_debug.log");
+                object folder = HttpContext.Current.Session["Calibration_folder"];
+                object sessionStation = HttpContext.Current.Session["Station"];
+                string prefix = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") +
+                    " | session=" + HttpContext.Current.Session.SessionID +
+                    " | station=" + (sessionStation == null ? "null" : sessionStation.ToString()) +
+                    " | folder=" + (folder == null ? "null" : folder.ToString()) +
+                    " | ";
+
+                lock (CalibrationDebugLogLock)
+                {
+                    File.AppendAllText(filePath, prefix + message + Environment.NewLine);
+                }
+            }
+            catch
+            {
+                ;
+            }
+        }
+
+        private string DescribeFile(string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(filePath)) return "path=empty";
+                if (!File.Exists(filePath)) return filePath + " missing";
+                return filePath + " " + new FileInfo(filePath).Length.ToString() + " bytes";
+            }
+            catch
+            {
+                return filePath + " unknown";
+            }
         }
 
         private void SafeSeekReader(StreamReader reader, long absolutePosition)
@@ -585,6 +641,7 @@ namespace WebApplication2
 
             //string strRootRelativePathName = Server.MapPath(@"~\ProgramFiles\Save_Pulses_Calibration\" + filename);
             string strRootRelativePathName = Path.Combine(GetConfiguredDataRoot(), "Save_Pulses_Calibration_Phase2", filename);
+            LogCalibrationDebug("Set_File_Position file=" + DescribeFile(strRootRelativePathName));
             if (File.Exists(strRootRelativePathName))
             {
                 StreamReader previousReader = HttpContext.Current.Session["Calibration_rs"] as StreamReader;
@@ -605,8 +662,13 @@ namespace WebApplication2
                 HttpContext.Current.Session["Calibration_rs"] = rs;
                 if (IsReadAllMode()) SafeSeekReader(rs, 0);
                 else AlignToLastCompletedCalibrationEvent(rs);
+                LogCalibrationDebug("Set_File_Position opened reader position=" + rs.BaseStream.Position.ToString() + " length=" + rs.BaseStream.Length.ToString());
             }
-            else HttpContext.Current.Session["Calibration_rs"] = null;
+            else
+            {
+                HttpContext.Current.Session["Calibration_rs"] = null;
+                LogCalibrationDebug("Set_File_Position no data file found");
+            }
 
             //pulselastfile = fopen(filename, "a");
         }
@@ -621,9 +683,12 @@ namespace WebApplication2
                 {
                     File.AppendAllText(path, peak.ToString() + "\n");
                 }
+                LogCalibrationDebug("Save_Peaks test" + counter.ToString() + ".txt peak=" + peak.ToString() + " " + DescribeFile(path));
             }
             catch
-            {; }
+            {
+                LogCalibrationDebug("Save_Peaks failed test" + counter.ToString() + ".txt");
+            }
         }
 
         protected void Save_Mean_Pulse(int Counter, int CH, float[,] vv)
@@ -699,21 +764,35 @@ namespace WebApplication2
                         rs.WriteLine(ss.ToString());
                     }
                     rs.Close();
+                    LogCalibrationDebug("Save_Mean_Pulse pulse" + Counter.ToString() + ".txt npm=" + npm[counter].ToString() + " amax=" + amax.ToString() + " kmax=" + kmax.ToString() + " " + DescribeFile(name));
                 }
-                catch {; }
+                catch
+                {
+                    LogCalibrationDebug("Save_Mean_Pulse failed pulse" + Counter.ToString() + ".txt npm=" + npm[counter].ToString() + " amax=" + amax.ToString() + " kmax=" + kmax.ToString());
+                }
+            }
+            else
+            {
+                LogCalibrationDebug("Save_Mean_Pulse skipped pulse" + Counter.ToString() + ".txt fail=" + fail.ToString() + " amax=" + amax.ToString() + " kmax=" + kmax.ToString());
             }
 
         }
         protected void Read_events(int mode)
         {
             StreamReader rs = (StreamReader)HttpContext.Current.Session["Calibration_rs"];
-            if (rs == null) return;
+            if (rs == null)
+            {
+                LogCalibrationDebug("Read_events mode=" + mode.ToString() + " no reader");
+                return;
+            }
             float[] peak = new float[4] { -1, -1, -1, 1 };
             float[] vflag = new float[4] { -1, -1, -1, 1 };
             long record = rs.BaseStream.Length - rs.BaseStream.Position;
             float events = record / CalibrationEventBytes;
+            LogCalibrationDebug("Read_events start mode=" + mode.ToString() + " position=" + rs.BaseStream.Position.ToString() + " length=" + rs.BaseStream.Length.ToString() + " available=" + record.ToString() + " estimatedEvents=" + events.ToString());
             if (record < CalibrationEventBytes) //this will update the file if the hour is changed?
             {
+                LogCalibrationDebug("Read_events insufficient bytes; resetting reader");
                 Set_File_Position();
                 return;
             }
@@ -740,6 +819,7 @@ namespace WebApplication2
                     this_event_start=rs.BaseStream.Position;
                     if (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
                     {
+                        LogCalibrationDebug("Read_events invalid marker mode=" + mode.ToString() + " flags=" + vflag[0].ToString() + "," + vflag[1].ToString() + "," + vflag[2].ToString() + "," + vflag[3].ToString() + " readAll=" + HttpContext.Current.Session["ReadAll"].ToString());
                         if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
                         {
                             while (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
@@ -758,8 +838,24 @@ namespace WebApplication2
                         }
                         else
                         {
-                            Set_File_Position();
-                            return;
+                            int skippedLines = 0;
+                            while (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
+                            {
+                                line = rs.ReadLine();
+                                if (line == null)
+                                {
+                                    LogCalibrationDebug("Read_events resync hit EOF after skippedLines=" + skippedLines.ToString());
+                                    Set_File_Position();
+                                    return;
+                                }
+                                skippedLines++;
+                                flags[0] = line.Substring(0, 5);
+                                flags[1] = line.Substring(6, 5);
+                                flags[2] = line.Substring(12, 5);
+                                flags[3] = line.Substring(18);
+                                for (int i = 0; i < 4; i++) vflag[i] = (float)Convert.ChangeType(flags[i], typeof(float));
+                            }
+                            LogCalibrationDebug("Read_events resynced after skippedLines=" + skippedLines.ToString());
                         }
                     }
                 }
@@ -771,7 +867,11 @@ namespace WebApplication2
                         //rs.BaseStream.Seek(this_event_start + offset, SeekOrigin.Begin);
                         bypass=true;
                     }
-                    else throw;
+                    else
+                    {
+                        LogCalibrationDebug("Read_events marker parse failed; throwing");
+                        throw;
+                    }
                 }
 
                 ic++;
@@ -923,6 +1023,7 @@ namespace WebApplication2
                 }
                 evts_read++;
             }
+            LogCalibrationDebug("Read_events completed mode=" + mode.ToString() + " eventsRead=" + evts_read.ToString());
             Set_File_Position(); //we always set the position after read
         }
 
@@ -1141,9 +1242,11 @@ namespace WebApplication2
                         string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
                         string result = BatchCommand("script_calib_start.cmd", strPathCalibrationFolder);
                         HttpContext.Current.Session["Calibration_State"] = result;
+                        LogCalibrationDebug("BatchCommand script_calib_start.cmd result=" + result.Replace(Environment.NewLine, " | "));
                         string SessionId = HttpContext.Current.Session.SessionID;
                         string image = "outroot_" + SessionId + ".jpg";
                         string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot.jpg";
+                        LogCalibrationDebug("Plot copy response source=" + DescribeFile(strRootRelativePathName) + " target=" + Server.MapPath(strPathName));
                         File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
                         string ss = img0.ImageUrl;
@@ -1172,9 +1275,11 @@ namespace WebApplication2
                         string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
                         string result = BatchCommand("script_sync_start.cmd", strPathCalibrationFolder);
                         HttpContext.Current.Session["Calibration_State"] = result;
+                        LogCalibrationDebug("BatchCommand script_sync_start.cmd result=" + result.Replace(Environment.NewLine, " | "));
                         string SessionId = HttpContext.Current.Session.SessionID;
                         string image = "outroot2_" + SessionId + ".jpg";
                         string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot2.jpg";
+                        LogCalibrationDebug("Plot copy sync source=" + DescribeFile(strRootRelativePathName) + " target=" + Server.MapPath(strPathName));
                         File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
                         string ss = img1.ImageUrl;
@@ -1205,9 +1310,11 @@ namespace WebApplication2
                         string strPathCalibrationFolder = Server.MapPath(@"~\App_Data\" + HttpContext.Current.Session["Calibration_folder"].ToString());
                         string result = BatchCommand("script_calib_start.cmd", strPathCalibrationFolder);
                         HttpContext.Current.Session["Calibration_State"] = result;
+                        LogCalibrationDebug("BatchCommand script_calib_start.cmd result=" + result.Replace(Environment.NewLine, " | "));
                         string SessionId = HttpContext.Current.Session.SessionID;
                         string image = "outroot_" + SessionId + ".jpg";
                         string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot.jpg";
+                        LogCalibrationDebug("Plot copy response source=" + DescribeFile(strRootRelativePathName) + " target=" + Server.MapPath(strPathName));
                         File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
                         string ss = img0.ImageUrl;
@@ -1221,8 +1328,10 @@ namespace WebApplication2
                         string SessionId = HttpContext.Current.Session.SessionID;
                         string result = BatchCommand("script_sync_start.cmd", strPathCalibrationFolder);
                         HttpContext.Current.Session["Calibration_State"] = result;
+                        LogCalibrationDebug("BatchCommand script_sync_start.cmd result=" + result.Replace(Environment.NewLine, " | "));
                         string image = "outroot2_" + SessionId + ".jpg";
                         string strPathName = @"~\images\" + image; string strRootRelativePathName = strPathCalibrationFolder.ToString() + @"\outroot2.jpg";
+                        LogCalibrationDebug("Plot copy sync source=" + DescribeFile(strRootRelativePathName) + " target=" + Server.MapPath(strPathName));
                         File.Copy(strRootRelativePathName, Server.MapPath(strPathName), true);
 
                         string ss = img1.ImageUrl;
