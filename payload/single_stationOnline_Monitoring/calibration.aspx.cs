@@ -104,6 +104,20 @@ namespace WebApplication2
             }
         }
 
+        private bool IsCalibrationEventMarker(float[] flags)
+        {
+            if (flags == null || flags.Length < 4) return false;
+
+            bool oldMarker =
+                flags[0] == -99 && flags[1] == -99 &&
+                flags[2] == -99 && flags[3] == -99;
+            bool currentMarker =
+                flags[0] == -999 && flags[1] == -999 &&
+                flags[2] == -999 && flags[3] == -999;
+
+            return oldMarker || currentMarker;
+        }
+
         private void SafeSeekReader(StreamReader reader, long absolutePosition)
         {
             if (reader == null) return;
@@ -817,12 +831,12 @@ namespace WebApplication2
                     //string[] elements = line.Split(' ');
                     for (int i = 0; i < 4; i++) vflag[i] = (float)Convert.ChangeType(flags[i], typeof(float));
                     this_event_start=rs.BaseStream.Position;
-                    if (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
+                    if (!IsCalibrationEventMarker(vflag))
                     {
                         LogCalibrationDebug("Read_events invalid marker mode=" + mode.ToString() + " flags=" + vflag[0].ToString() + "," + vflag[1].ToString() + "," + vflag[2].ToString() + "," + vflag[3].ToString() + " readAll=" + HttpContext.Current.Session["ReadAll"].ToString());
                         if (HttpContext.Current.Session["ReadAll"].ToString() == "1")
                         {
-                            while (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
+                            while (!IsCalibrationEventMarker(vflag))
                             {
                                 line = rs.ReadLine();
                                 if (line == null) return;
@@ -839,7 +853,7 @@ namespace WebApplication2
                         else
                         {
                             int skippedLines = 0;
-                            while (vflag[0] != -99 || vflag[1] != -99 || vflag[2] != -99 || vflag[3] != -99)
+                            while (!IsCalibrationEventMarker(vflag))
                             {
                                 line = rs.ReadLine();
                                 if (line == null)
