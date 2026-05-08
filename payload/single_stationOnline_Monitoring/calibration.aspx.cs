@@ -756,7 +756,11 @@ namespace WebApplication2
                             // rs.BaseStream.Seek(this_event_start + offset, SeekOrigin.Begin);
                             bypass = true;
                         }
-                        else Set_File_Position();
+                        else
+                        {
+                            Set_File_Position();
+                            return;
+                        }
                     }
                 }
                 catch (Exception)
@@ -1076,11 +1080,19 @@ namespace WebApplication2
 
         protected void Read_Events_and_Show_Protected()
         {
-            string IsResponseStarted = HttpContext.Current.Session["Calibration_Response_Started"].ToString();
-            string IsSyncStarted = HttpContext.Current.Session["Calibration_Sync_Started"].ToString();
+            object responseStartedObj = HttpContext.Current.Session["Calibration_Response_Started"];
+            object syncStartedObj = HttpContext.Current.Session["Calibration_Sync_Started"];
+            if (responseStartedObj == null || syncStartedObj == null)
+            {
+                Timer1.Enabled = false;
+                return;
+            }
+            string IsResponseStarted = responseStartedObj.ToString();
+            string IsSyncStarted = syncStartedObj.ToString();
             StreamReader rs = (StreamReader)HttpContext.Current.Session["Calibration_rs"];
             if (rs == null) { Set_File_Position(); rs = (StreamReader)HttpContext.Current.Session["Calibration_rs"]; }
             if (rs == null) return;
+            if (rs.BaseStream == null) return;
             long pos = rs.BaseStream.Position;
             try
             {
@@ -1088,6 +1100,7 @@ namespace WebApplication2
             }
             catch (Exception)
             {
+                if (rs.BaseStream == null) return;
                 long record = rs.BaseStream.Length - (pos + CalibrationEventBytes);
                 if (record > CalibrationEventBytes)
                     SafeSeekReader(rs, pos + CalibrationEventBytes);
@@ -1235,9 +1248,11 @@ namespace WebApplication2
             }
             finally
             {
+                object responseStartedObj = HttpContext.Current.Session["Calibration_Response_Started"];
+                object syncStartedObj = HttpContext.Current.Session["Calibration_Sync_Started"];
                 Timer1.Enabled =
-                    HttpContext.Current.Session["Calibration_Response_Started"].ToString() == "1" ||
-                    HttpContext.Current.Session["Calibration_Sync_Started"].ToString() == "1";
+                    (responseStartedObj != null && responseStartedObj.ToString() == "1") ||
+                    (syncStartedObj != null && syncStartedObj.ToString() == "1");
             }
         }
 
